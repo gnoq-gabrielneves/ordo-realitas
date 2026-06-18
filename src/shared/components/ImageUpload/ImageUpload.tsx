@@ -1,0 +1,119 @@
+"use client";
+
+import { createClient } from "@/shared/lib/supabase/client";
+import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import Image from "next/image";
+import { useRef, useState } from "react";
+
+interface ImageUploadProps {
+  bucket: string;
+  value: string | null;
+  onChange: (url: string | null) => void;
+}
+
+export function ImageUpload({ bucket, value, onChange }: ImageUploadProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setError("Arquivo inválido. Envie uma imagem.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const ext = file.name.split(".").pop();
+    const path = `${user!.id}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      console.error("[ImageUpload] upload error:", uploadError);
+      setError("Erro ao enviar imagem.");
+      setLoading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    onChange(data.publicUrl);
+    setLoading(false);
+  }
+
+  async function handleRemove() {
+    if (!value) return;
+    const supabase = createClient();
+    const path = value.split(`/${bucket}/`)[1];
+    if (path) await supabase.storage.from(bucket).remove([path]);
+    onChange(null);
+  }
+
+  return (
+    <div className="space-y-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          e.target.value = "";
+        }}
+      />
+
+      {value ? (
+        <div className="group relative h-32 w-32 border border-border overflow-hidden">
+          <Image
+            src={value}
+            alt="Imagem do sujeito"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="flex h-8 w-8 items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-colors"
+              title="Trocar imagem"
+            >
+              <Upload className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="flex h-8 w-8 items-center justify-center bg-white/10 text-white hover:bg-destructive/80 transition-colors"
+              title="Remover imagem"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={loading}
+          className="flex h-32 w-32 flex-col items-center justify-center gap-2 border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+        >
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <ImageIcon className="h-5 w-5" />
+              <span className="text-[10px] uppercase tracking-wider">Imagem</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
