@@ -93,16 +93,19 @@ export function ApresentacaoPage() {
   }
 
   function addHandoutAoCarrossel(image_url: string, titulo: string) {
+    if (!presentation) return;
     const jaExiste = presentation.carousel_images.some((c) => c.url === image_url);
     if (jaExiste) return;
     save({ carousel_images: [...presentation.carousel_images, { url: image_url, title: titulo }] });
   }
 
   function removeCarouselImage(idx: number) {
+    if (!presentation) return;
     save({ carousel_images: presentation.carousel_images.filter((_, i) => i !== idx) });
   }
 
   function salvarPreset() {
+    if (!presentation) return;
     if (!presetName.trim() || presentation.carousel_images.length === 0) return;
     const presets = presentation.carousel_presets ?? [];
 
@@ -151,11 +154,13 @@ export function ApresentacaoPage() {
 
   function deletarPreset(id: string) {
     if (editingPresetId === id) cancelarEdicao();
+    if (!presentation) return;
     save({ carousel_presets: (presentation.carousel_presets ?? []).filter((p) => p.id !== id) });
   }
 
   function addCarouselManual() {
     if (!carouselUrl.trim()) return;
+    if (!presentation) return;
     const next: CarouselImage[] = [...presentation.carousel_images, { url: carouselUrl.trim(), title: carouselTitle.trim() || null }];
     save({ carousel_images: next });
     setCarouselUrl("");

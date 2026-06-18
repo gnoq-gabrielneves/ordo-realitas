@@ -95,7 +95,7 @@ export async function getHandoutsComImagem(): Promise<HandoutComImagem[]> {
         result.push({
           mission_id: mission.id,
           mission_titulo: mission.titulo,
-          campaign_name: (mission.campaigns as { name: string } | null)?.name ?? "",
+          campaign_name: (mission.campaigns as unknown as { name: string } | null)?.name ?? "",
           titulo: h.titulo,
           image_url: h.image_url,
           conteudo: h.conteudo,
