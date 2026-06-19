@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeleteSujeito, useSujeito, useUpdateSujeito } from "@/features/sujeitos/hooks/useSujeitos";
+import { useDeleteSujeito, useSujeito } from "@/features/sujeitos/hooks/useSujeitos";
 import { AppHeader } from "@/shared/components/AppHeader/AppHeader";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { Badge } from "@/shared/components/ui/badge";
@@ -9,13 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 import { NpcAcaoTipo } from "@/shared/types/npc";
 import { cn } from "@/shared/lib/utils";
 import {
-  ArrowDown, ArrowLeft, ArrowUp, Eye, Gauge, Heart, Pencil, RotateCcw, Shield, Skull, Sparkles, Trash2, Zap,
+  ArrowLeft, Eye, Gauge, Heart, Pencil, Shield, Skull, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 const origemLabel: Record<string, string> = {
   sangue: "Sangue", morte: "Morte", medo: "Medo",
@@ -35,9 +33,6 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
   const router = useRouter();
   const { data: sujeito, isLoading, isError } = useSujeito(id);
   const { mutate: deletar, isPending: deleting } = useDeleteSujeito();
-  const update = useUpdateSujeito(id);
-  const [pvOpt, setPvOpt] = useState<number | null>(null);
-  useEffect(() => setPvOpt(null), [id]);
 
   function handleDelete() {
     deletar(id, { onSuccess: () => router.push("/sujeitos") });
@@ -67,29 +62,6 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
 
   const machucado = sujeito.pv ? Math.floor(sujeito.pv / 2) : null;
   const temSaves = sujeito.fortitude || sujeito.reflexos || sujeito.vontade || sujeito.deslocamento;
-
-  const pvMax = sujeito.pv;
-  const pvAtual = pvOpt ?? sujeito.pv_atual ?? sujeito.pv ?? 0;
-
-  const adjustPv = (delta: number) => {
-    if (pvMax == null) return;
-    const cur = pvOpt ?? sujeito.pv_atual ?? pvMax;
-    const next = Math.max(0, Math.min(pvMax, cur + delta));
-    if (next === cur) return;
-    setPvOpt(next);
-    update.mutate({ pv_atual: next });
-    toast(`PV  ${cur} → ${next}`, {
-      description: delta > 0 ? `Recuperou +${delta} PV` : `Perdeu ${Math.abs(delta)} PV`,
-      icon: delta > 0 ? <ArrowUp className="size-4 text-emerald-500" /> : <ArrowDown className="size-4 text-red-500" />,
-    });
-  };
-
-  const resetPv = () => {
-    if (pvMax == null) return;
-    setPvOpt(pvMax);
-    update.mutate({ pv_atual: pvMax });
-    toast.success("PV restaurado", { description: `PV ${pvMax} / ${pvMax}` });
-  };
 
   return (
     <>
@@ -192,20 +164,13 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
                   value={sujeito.defesa != null ? String(sujeito.defesa) : "—"}
                   accent="blue"
                 />
-                {pvMax != null ? (
-                  <KeyStat
-                    icon={<Heart className="h-5 w-5" />}
-                    label="Pontos de Vida"
-                    value={`${pvAtual} / ${pvMax}`}
-                    hint={machucado != null ? `Machucado ${machucado}` : undefined}
-                    accent="red"
-                    bar={{ atual: pvAtual, max: pvMax, color: "bg-red-500" }}
-                    onAdjust={adjustPv}
-                    onReset={pvAtual !== pvMax ? resetPv : undefined}
-                  />
-                ) : (
-                  <KeyStat icon={<Heart className="h-5 w-5" />} label="Pontos de Vida" value="—" accent="red" />
-                )}
+                <KeyStat
+                  icon={<Heart className="h-5 w-5" />}
+                  label="Pontos de Vida"
+                  value={sujeito.pv != null ? String(sujeito.pv) : "—"}
+                  hint={machucado != null ? `Machucado ${machucado}` : undefined}
+                  accent="red"
+                />
               </div>
             )}
 
@@ -454,56 +419,19 @@ const ACCENTS = {
   red: "border-red-500/30 text-red-400",
 };
 
-const QUICK_STEPS = [-5, -1, 1, 5];
-
-function KeyStat({ icon, label, value, hint, accent, bar, onAdjust, onReset }: {
+function KeyStat({ icon, label, value, hint, accent }: {
   icon: React.ReactNode; label: string; value: string; hint?: string; accent: keyof typeof ACCENTS;
-  bar?: { atual: number; max: number; color: string }; onAdjust?: (delta: number) => void; onReset?: () => void;
 }) {
-  const pct = bar && bar.max > 0 ? Math.min(100, (bar.atual / bar.max) * 100) : 0;
   return (
-    <div className={cn("rounded-md border bg-card p-4", ACCENTS[accent])}>
-      <div className="flex items-center gap-4">
-        <div className="shrink-0">{icon}</div>
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-            {label}
-            {onReset && (
-              <button type="button" onClick={onReset} title="Restaurar PV" className="text-muted-foreground hover:text-foreground transition-colors">
-                <RotateCcw className="h-3 w-3" />
-              </button>
-            )}
-          </p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold leading-none text-foreground tabular-nums">{value}</p>
-            {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
-          </div>
+    <div className={cn("flex items-center gap-4 rounded-md border bg-card p-4", ACCENTS[accent])}>
+      <div className="shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-3xl font-bold leading-none text-foreground tabular-nums">{value}</p>
+          {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
         </div>
       </div>
-      {bar && (
-        <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-          <div className={cn("h-full rounded-full transition-all", bar.color)} style={{ width: `${pct}%` }} />
-        </div>
-      )}
-      {onAdjust && (
-        <div className="mt-2.5 grid grid-cols-4 gap-1">
-          {QUICK_STEPS.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => onAdjust(d)}
-              className={cn(
-                "h-7 rounded text-xs font-medium tabular-nums border transition-colors",
-                d < 0
-                  ? "border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive hover:bg-destructive/5"
-                  : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground hover:bg-primary/5"
-              )}
-            >
-              {d > 0 ? `+${d}` : d}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
