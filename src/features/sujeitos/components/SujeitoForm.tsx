@@ -66,6 +66,9 @@ const EMPTY_PAYLOAD: NpcPayload = {
   pv: null,
   pv_atual: null,
   deslocamento: null,
+  pp_dt: null,
+  pp_dano: null,
+  pp_imune_nex: null,
   pericias: [],
   resistencias: [],
   vulnerabilidades: [],
@@ -109,6 +112,9 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
       pv: initial.pv,
       pv_atual: initial.pv_atual,
       deslocamento: initial.deslocamento,
+      pp_dt: initial.pp_dt,
+      pp_dano: initial.pp_dano,
+      pp_imune_nex: initial.pp_imune_nex,
       pericias: initial.pericias,
       resistencias: initial.resistencias,
       vulnerabilidades: initial.vulnerabilidades,
@@ -395,6 +401,25 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
               </Field>
             </div>
           </section>
+
+          {/* Presença Perturbadora — só para criaturas */}
+          {form.tipo === "criatura" && (
+            <section>
+              <SectionTitle>Presença Perturbadora</SectionTitle>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Perda de Sanidade ao ver a criatura.</p>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="DT">
+                  <Input value={form.pp_dt ?? ""} onChange={(e) => set("pp_dt", e.target.value || null)} placeholder="ex: 20" />
+                </Field>
+                <Field label="Dano">
+                  <Input value={form.pp_dano ?? ""} onChange={(e) => set("pp_dano", e.target.value || null)} placeholder="ex: 3d8 mental" />
+                </Field>
+                <Field label="Imune a partir de (NEX)">
+                  <Input value={form.pp_imune_nex ?? ""} onChange={(e) => set("pp_imune_nex", e.target.value || null)} placeholder="ex: 40%" />
+                </Field>
+              </div>
+            </section>
+          )}
         </TabsContent>
 
         {/* --- PERÍCIAS --- */}

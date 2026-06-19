@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 import { NpcAcaoTipo } from "@/shared/types/npc";
 import { cn } from "@/shared/lib/utils";
 import {
-  ArrowDown, ArrowLeft, ArrowUp, Eye, Gauge, Heart, Pencil, RotateCcw, Shield, Sparkles, Trash2, Zap,
+  ArrowDown, ArrowLeft, ArrowUp, Eye, Gauge, Heart, Pencil, RotateCcw, Shield, Skull, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -206,6 +206,20 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
                 ) : (
                   <KeyStat icon={<Heart className="h-5 w-5" />} label="Pontos de Vida" value="—" accent="red" />
                 )}
+              </div>
+            )}
+
+            {/* Presença Perturbadora — criaturas */}
+            {(sujeito.pp_dt || sujeito.pp_dano || sujeito.pp_imune_nex) && (
+              <div className="rounded-md border border-purple-500/30 bg-purple-500/[0.06] p-4">
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-purple-400 mb-2">
+                  <Skull className="h-3.5 w-3.5" /> Presença Perturbadora
+                </p>
+                <div className="flex items-center gap-4 flex-wrap text-sm">
+                  {sujeito.pp_dt && <span className="text-muted-foreground">DT <strong className="text-foreground font-semibold">{sujeito.pp_dt}</strong></span>}
+                  {sujeito.pp_dano && <span className="font-semibold text-foreground">{sujeito.pp_dano}</span>}
+                  {sujeito.pp_imune_nex && <span className="text-muted-foreground">NEX <strong className="text-foreground font-semibold">{sujeito.pp_imune_nex}</strong> é imune</span>}
+                </div>
               </div>
             )}
 

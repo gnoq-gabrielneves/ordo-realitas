@@ -74,6 +74,10 @@ export interface Npc {
   pv: number | null;
   pv_atual: number | null; // PV atual durante a sessão (default = pv)
   deslocamento: string | null;
+  // Presença Perturbadora (criaturas) — perda de Sanidade ao ver a criatura
+  pp_dt: string | null; // DT do teste (ex: "20")
+  pp_dano: string | null; // dano de Sanidade (ex: "3d8 mental")
+  pp_imune_nex: string | null; // NEX que fica imune (ex: "40%")
   pericias: NpcPericia[];
   resistencias: NpcResistencia[];
   vulnerabilidades: string[];
