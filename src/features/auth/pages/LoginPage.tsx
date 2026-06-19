@@ -29,7 +29,8 @@ export function LoginPage() {
       return;
     }
 
-    router.push("/operacoes");
+    router.push("/");
+    router.refresh();
   }
 
   return (

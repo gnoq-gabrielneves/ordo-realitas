@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { homeDoRole, podeAcessar, type Role } from "@/shared/constants/roles";
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -37,8 +38,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (user && isPublicRoute) {
-    return NextResponse.redirect(new URL("/home", request.url));
+  // Controle de acesso por papel.
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    const role = (profile?.role ?? "jogador") as Role;
+    const home = homeDoRole(role);
+
+    if (isPublicRoute) {
+      return NextResponse.redirect(new URL(home, request.url));
+    }
+    // Bloqueia rotas fora do papel (ignora /api, tratada na própria rota).
+    if (!pathname.startsWith("/api") && !podeAcessar(role, pathname)) {
+      return NextResponse.redirect(new URL(home, request.url));
+    }
   }
 
   return supabaseResponse;

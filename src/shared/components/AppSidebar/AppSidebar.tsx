@@ -1,6 +1,8 @@
 "use client";
 
 import { NAV_ITEMS } from "@/shared/constants/nav";
+import { podeAcessar } from "@/shared/constants/roles";
+import { useProfile } from "@/shared/hooks/useProfile";
 import { cn } from "@/shared/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +10,8 @@ import { usePathname } from "next/navigation";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const profile = useProfile();
+  const items = NAV_ITEMS.filter((item) => podeAcessar(profile?.role, item.href));
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-border bg-sidebar">
@@ -33,7 +37,7 @@ export function AppSidebar() {
       {/* nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="space-y-0.5">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
 
