@@ -5,13 +5,102 @@ import { AppHeader } from "@/shared/components/AppHeader/AppHeader";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { ArrowLeft, BookOpen, Pencil, PlusIcon, Trash2 } from "lucide-react";
+import { Campanha, Missao } from "@/shared/types/campaign";
+import { ArrowLeft, BookOpen, FileText, Flag, Pencil, PlusIcon, ScrollText, ShieldAlert, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface CampanhaDetailPageProps { id: string }
+
+function InfoTile({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
+  return (
+    <div className="border border-border bg-card p-4">
+      <div className="mb-3 text-muted-foreground">{icon}</div>
+      <p className="text-lg font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function TextBlock({ title, children, muted = false }: {
+  title: string;
+  children: React.ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <section>
+      <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
+      <div className={muted ? "border border-border bg-muted/30 p-4" : "border border-border bg-card p-4"}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function MissaoCard({ missao, campaignId }: { missao: Missao; campaignId: string }) {
+  return (
+    <Link
+      href={`/campanhas/${campaignId}/missoes/${missao.id}`}
+      className="group grid gap-3 border border-border bg-card p-4 hover:border-primary/40 sm:grid-cols-[44px_1fr_auto]"
+    >
+      <div className="flex h-11 w-11 items-center justify-center border border-border bg-muted font-mono text-xs text-muted-foreground">
+        {missao.is_prologo ? "P" : String(missao.numero).padStart(2, "0")}
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-semibold group-hover:text-primary">{missao.titulo}</p>
+          {missao.is_prologo && <Badge variant="outline" className="rounded-sm text-[10px] uppercase tracking-wider">Prólogo</Badge>}
+        </div>
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+          {missao.resumo || missao.historico || "Sem resumo. Adicione uma frase para lembrar o objetivo da missão."}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground sm:justify-end">
+        {(missao.nex_inicial != null || missao.nex_final != null) && (
+          <span>NEX {missao.nex_inicial ?? "?"}% / {missao.nex_final ?? "?"}%</span>
+        )}
+        <ScrollText className="h-4 w-4" />
+      </div>
+    </Link>
+  );
+}
+
+function CampaignHero({ campanha }: { campanha: Campanha }) {
+  return (
+    <div className="relative overflow-hidden border border-border bg-card">
+      {campanha.image_url && (
+        <Image src={campanha.image_url} alt="" fill className="object-cover opacity-15 blur-sm" />
+      )}
+      <div className="relative grid gap-5 p-5 lg:grid-cols-[112px_1fr]">
+        <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden border border-border bg-muted text-muted-foreground">
+          {campanha.image_url ? (
+            <Image src={campanha.image_url} alt={campanha.name} fill className="object-cover" />
+          ) : (
+            <BookOpen className="h-8 w-8" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-primary/75">Dossiê de campanha</p>
+          <h1 className="mt-2 text-2xl font-semibold">{campanha.name}</h1>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant="outline" className="rounded-sm text-[10px] uppercase tracking-wider">
+              NEX {campanha.nex_inicial}% / {campanha.nex_final}%
+            </Badge>
+            {campanha.vilao && (
+              <Badge variant="destructive" className="rounded-sm text-[10px] uppercase tracking-wider">
+                Antagonista: {campanha.vilao}
+              </Badge>
+            )}
+          </div>
+          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            {campanha.synopsis || "Sem sinopse cadastrada. Use este espaço para registrar a premissa da campanha e orientar as próximas sessões."}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
   const router = useRouter();
@@ -27,7 +116,7 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
     <>
       <AppHeader title="Campanha" />
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-5 w-64 bg-muted animate-pulse rounded-sm" />)}</div>
+        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-8 w-72 animate-pulse bg-muted" />)}</div>
       </main>
     </>
   );
@@ -43,43 +132,18 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
 
   const prologo = missoes.find((m) => m.is_prologo);
   const missoesPrincipais = missoes.filter((m) => !m.is_prologo).sort((a, b) => a.numero - b.numero);
+  const orderedMissions = prologo ? [prologo, ...missoesPrincipais] : missoesPrincipais;
 
   return (
     <>
       <AppHeader title={campanha.name} />
       <main className="flex-1 overflow-y-auto p-6">
-        <Link href="/campanhas" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6 transition-colors w-fit">
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Voltar para Campanhas
-        </Link>
-
-        {/* Cabeçalho */}
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center border border-border bg-muted text-muted-foreground overflow-hidden">
-              {campanha.image_url
-                ? <Image src={campanha.image_url} alt={campanha.name} fill className="object-cover" />
-                : <BookOpen className="h-6 w-6" />
-              }
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">{campanha.name}</h1>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                {campanha.vilao && (
-                  <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
-                    Vilão: {campanha.vilao}
-                  </Badge>
-                )}
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  NEX {campanha.nex_inicial}% → {campanha.nex_final}%
-                </span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  {missoes.length} {missoes.length === 1 ? "missão" : "missões"}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link href="/campanhas" className="flex w-fit items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Voltar para campanhas
+          </Link>
+          <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href={`/campanhas/${id}/editar`}>
                 <Pencil className="h-3.5 w-3.5" /> Editar
@@ -91,111 +155,103 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
               onConfirm={handleDelete}
               disabled={deleting}
             >
-              <Button variant="outline" size="sm"
-                className="text-destructive hover:text-destructive hover:border-destructive/40">
+              <Button variant="outline" size="sm" className="text-destructive hover:border-destructive/40 hover:text-destructive">
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </ConfirmDialog>
           </div>
         </div>
 
-        <Tabs defaultValue="missoes">
-          <TabsList className="mb-6">
-            <TabsTrigger value="missoes">Missões</TabsTrigger>
-            {campanha.synopsis && <TabsTrigger value="sinopse">Sinopse</TabsTrigger>}
-            {campanha.historico && <TabsTrigger value="historico">Histórico</TabsTrigger>}
-            {campanha.notas && <TabsTrigger value="notas">Notas</TabsTrigger>}
-          </TabsList>
+        <div className="space-y-6">
+          <CampaignHero campanha={campanha} />
 
-          {/* MISSÕES */}
-          <TabsContent value="missoes" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Dossiês</p>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/campanhas/${id}/missoes/nova`}>
-                  <PlusIcon className="h-3.5 w-3.5" /> Nova Missão
-                </Link>
-              </Button>
+          <section className="grid gap-3 sm:grid-cols-3">
+            <InfoTile label="Missões" value={missoes.length} icon={<Flag className="h-4 w-4" />} />
+            <InfoTile label="NEX inicial" value={`${campanha.nex_inicial}%`} icon={<BookOpen className="h-4 w-4" />} />
+            <InfoTile label="NEX final" value={`${campanha.nex_final}%`} icon={<ShieldAlert className="h-4 w-4" />} />
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[1fr_380px]">
+            <div className="space-y-6">
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                    <Flag className="h-3.5 w-3.5" />
+                    Missões da operação
+                  </p>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/campanhas/${id}/missoes/nova`}>
+                      <PlusIcon className="h-3.5 w-3.5" /> Nova missão
+                    </Link>
+                  </Button>
+                </div>
+
+                {orderedMissions.length === 0 ? (
+                  <div className="border border-dashed border-border py-12 text-center">
+                    <p className="text-sm font-medium">Nenhuma missão cadastrada.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Crie a primeira missão para começar a estruturar a campanha.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {orderedMissions.map((m) => (
+                      <MissaoCard key={m.id} missao={m} campaignId={id} />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {campanha.historico && (
+                <TextBlock title="Histórico">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{campanha.historico}</p>
+                </TextBlock>
+              )}
             </div>
 
-            {missoes.length === 0 && (
-              <div className="border border-dashed border-border py-12 text-center">
-                <p className="text-xs text-muted-foreground">Nenhuma missão cadastrada.</p>
-              </div>
-            )}
+            <aside className="space-y-6">
+              <TextBlock title="Preparo do mestre" muted>
+                <div className="space-y-3 text-sm">
+                  <PrepLine done={Boolean(campanha.synopsis)} label="Sinopse definida" />
+                  <PrepLine done={Boolean(campanha.vilao)} label="Antagonista definido" />
+                  <PrepLine done={missoes.length > 0} label="Missões cadastradas" />
+                  <PrepLine done={Boolean(campanha.notas)} label="Notas internas registradas" />
+                </div>
+              </TextBlock>
 
-            {prologo && (
-              <MissaoRow missao={prologo} campaignId={id} />
-            )}
+              {campanha.notas ? (
+                <TextBlock title="Notas do mestre">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{campanha.notas}</p>
+                </TextBlock>
+              ) : (
+                <TextBlock title="Notas do mestre" muted>
+                  <p className="text-sm text-muted-foreground">Nenhuma nota interna cadastrada.</p>
+                </TextBlock>
+              )}
 
-            {missoesPrincipais.map((m) => (
-              <MissaoRow key={m.id} missao={m} campaignId={id} />
-            ))}
-          </TabsContent>
-
-          {campanha.synopsis && (
-            <TabsContent value="sinopse">
-              <Block title="Sinopse">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{campanha.synopsis}</p>
-              </Block>
-            </TabsContent>
-          )}
-
-          {campanha.historico && (
-            <TabsContent value="historico">
-              <Block title="Histórico">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{campanha.historico}</p>
-              </Block>
-            </TabsContent>
-          )}
-
-          {campanha.notas && (
-            <TabsContent value="notas">
-              <Block title="Notas do Mestre">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{campanha.notas}</p>
-              </Block>
-            </TabsContent>
-          )}
-        </Tabs>
+              <TextBlock title="Atalhos">
+                <div className="grid gap-2">
+                  <Link href="/apresentacao" className="flex items-center gap-2 border border-border bg-background px-3 py-2 text-sm hover:border-primary/40">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Preparar tela de exibição
+                  </Link>
+                  <Link href="/combate" className="flex items-center gap-2 border border-border bg-background px-3 py-2 text-sm hover:border-primary/40">
+                    <ShieldAlert className="h-4 w-4 text-primary" />
+                    Abrir combate
+                  </Link>
+                </div>
+              </TextBlock>
+            </aside>
+          </section>
+        </div>
       </main>
     </>
   );
 }
 
-function MissaoRow({ missao, campaignId }: { missao: import("@/shared/types/campaign").Missao; campaignId: string }) {
+function PrepLine({ done, label }: { done: boolean; label: string }) {
   return (
-    <Link
-      href={`/campanhas/${campaignId}/missoes/${missao.id}`}
-      className="group flex items-start gap-4 border border-border bg-card p-4 hover:border-primary/40 transition-colors"
-    >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-muted text-xs font-mono text-muted-foreground">
-        {missao.is_prologo ? "P" : String(missao.numero).padStart(2, "0")}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-          {missao.titulo}
-        </p>
-        {missao.resumo && (
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{missao.resumo}</p>
-        )}
-        {(missao.nex_inicial != null || missao.nex_final != null) && (
-          <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">
-            NEX {missao.nex_inicial ?? "?"}% → {missao.nex_final ?? "?"}%
-          </p>
-        )}
-      </div>
-      {missao.is_prologo && (
-        <Badge variant="outline" className="text-[10px] uppercase tracking-wider shrink-0">Prólogo</Badge>
-      )}
-    </Link>
-  );
-}
-
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground mb-2">{title}</p>
-      <div className="border border-border bg-card p-4">{children}</div>
+    <div className="flex items-center gap-2">
+      <span className={done ? "h-2 w-2 bg-primary" : "h-2 w-2 border border-amber-600"} />
+      <span className={done ? "text-muted-foreground line-through decoration-muted-foreground/40" : "text-foreground"}>{label}</span>
     </div>
   );
 }

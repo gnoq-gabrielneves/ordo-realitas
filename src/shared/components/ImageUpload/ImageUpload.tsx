@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
@@ -26,9 +27,9 @@ export function ImageUpload({ bucket, value, onChange }: ImageUploadProps) {
     setLoading(true);
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const userId = await requireCurrentUserId(supabase);
     const ext = file.name.split(".").pop();
-    const path = `${user!.id}/${crypto.randomUUID()}.${ext}`;
+    const path = `${userId}/${crypto.randomUUID()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)

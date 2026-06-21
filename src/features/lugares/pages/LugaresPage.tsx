@@ -64,7 +64,7 @@ export function LugaresPage() {
           </div>
         ) : filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground py-8 text-center">
-            Nenhum lugar encontrado para "{search}".
+            Nenhum lugar encontrado para &quot;{search}&quot;.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

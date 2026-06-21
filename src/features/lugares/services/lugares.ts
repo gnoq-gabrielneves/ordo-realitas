@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { Place, PlacePayload } from "@/shared/types/place";
 
 const supabase = createClient();
@@ -33,10 +34,10 @@ export async function getSubLugares(parentId: string): Promise<Place[]> {
 }
 
 export async function createLugar(payload: PlacePayload): Promise<Place> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await requireCurrentUserId(supabase);
   const { data, error } = await supabase
     .from("places")
-    .insert({ ...payload, user_id: user!.id })
+    .insert({ ...payload, user_id: userId })
     .select()
     .single();
   if (error) throw error;

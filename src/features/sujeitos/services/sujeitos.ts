@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { Npc, NpcPayload } from "@/shared/types/npc";
 
 const supabase = createClient();
@@ -23,10 +24,10 @@ export async function getSujeito(id: string): Promise<Npc> {
 }
 
 export async function createSujeito(payload: NpcPayload): Promise<Npc> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await requireCurrentUserId(supabase);
   const { data, error } = await supabase
     .from("npcs")
-    .insert({ ...payload, user_id: user!.id })
+    .insert({ ...payload, user_id: userId })
     .select()
     .single();
   if (error) throw error;

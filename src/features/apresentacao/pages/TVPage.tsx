@@ -7,7 +7,9 @@ import { useEffect, useState } from "react";
 
 export function TVPage() {
   const { state, loading } = useActivePresentationRealtime();
-  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselScope = `${state?.mode ?? "placeholder"}:${state?.active_preset_id ?? "manual"}`;
+  const [carousel, setCarousel] = useState({ scope: carouselScope, index: 0 });
+  const carouselIndex = carousel.scope === carouselScope ? carousel.index : 0;
   const [fade, setFade] = useState(true);
 
   const activePreset = state?.active_preset_id
@@ -18,22 +20,21 @@ export function TVPage() {
   const images = activePreset?.images ?? state?.carousel_images ?? [];
 
   useEffect(() => {
-    setCarouselIndex(0);
-  }, [state?.mode]);
-
-  useEffect(() => {
     if (state?.mode !== "carousel" || images.length <= 1) return;
 
     const timer = setInterval(() => {
       setFade(false);
       setTimeout(() => {
-        setCarouselIndex((prev) => (prev + 1) % images.length);
+        setCarousel((current) => ({
+          scope: carouselScope,
+          index: ((current.scope === carouselScope ? current.index : 0) + 1) % images.length,
+        }));
         setFade(true);
       }, 400);
     }, interval * 1000);
 
     return () => clearInterval(timer);
-  }, [state?.mode, images.length, interval]);
+  }, [state?.mode, images.length, interval, carouselScope]);
 
   if (loading) return (
     <div className="h-screen w-screen bg-black flex items-center justify-center">

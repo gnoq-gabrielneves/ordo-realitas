@@ -19,7 +19,7 @@ import { AgentFormaSuprema, AgentSheet } from "@/shared/types/agent";
 import { cn } from "@/shared/lib/utils";
 import { ChevronLeft, Save, Skull } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 const TABS = [
   { id: "geral",        label: "Geral" },
@@ -37,6 +37,7 @@ const FORMA_KEYS: (keyof AgentFormaSuprema)[] = [
   "usa_pd", "pd_max", "pd_atual", "defesa_bonus", "defesa_equip",
   "deslocamento", "pericias", "ataques", "habilidades", "rituais",
 ];
+const FORMA_KEY_SET = new Set<keyof AgentSheet>(FORMA_KEYS);
 
 interface AgentDetailPageProps {
   agenteId: string;
@@ -46,22 +47,20 @@ interface AgentDetailPageProps {
 export function AgentDetailPage({ agenteId, backHref = "/agentes" }: AgentDetailPageProps) {
   const { data: agente, isLoading } = useAgente(agenteId);
   const update = useUpdateAgente();
-  const [local, setLocal] = useState<AgentSheet | null>(null);
+  const [localPatch, setLocalPatch] = useState<Partial<AgentSheet> | null>(null);
   const [dirty, setDirty] = useState(false);
   const [formaMode, setFormaMode] = useState<"base" | "suprema">("base");
-
-  useEffect(() => {
-    if (agente && !local) setLocal(agente);
-  }, [agente]);
+  const local = agente ? { ...agente, ...localPatch } : null;
 
   const onChange = useCallback((patch: Partial<AgentSheet>) => {
-    setLocal((prev) => prev ? { ...prev, ...patch } : prev);
+    setLocalPatch((prev) => ({ ...prev, ...patch }));
     setDirty(true);
   }, []);
 
   const save = async () => {
     if (!local) return;
     await update.mutateAsync({ id: local.id, payload: local });
+    setLocalPatch(null);
     setDirty(false);
   };
 
@@ -87,12 +86,10 @@ export function AgentDetailPage({ agenteId, backHref = "/agentes" }: AgentDetail
     const fsPatch: Partial<AgentFormaSuprema> = {};
     const basePatch: Partial<AgentSheet> = {};
     (Object.keys(patch) as (keyof AgentSheet)[]).forEach((k) => {
-      if ((FORMA_KEYS as string[]).includes(k as string)) {
-        // @ts-expect-error chave validada em FORMA_KEYS
-        fsPatch[k] = patch[k];
+      if (FORMA_KEY_SET.has(k)) {
+        Object.assign(fsPatch, { [k]: patch[k] });
       } else {
-        // @ts-expect-error repasse direto à base
-        basePatch[k] = patch[k];
+        Object.assign(basePatch, { [k]: patch[k] });
       }
     });
     const next: Partial<AgentSheet> = { ...basePatch };

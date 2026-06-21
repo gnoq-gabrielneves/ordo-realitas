@@ -11,31 +11,19 @@ import { CarouselImage, CarouselPreset, ImageFit, PresentationMode, Presentation
 import { BookMarked, ExternalLink, Loader2, Maximize2, Monitor, Pencil, PlusIcon, Shrink, Trash2, Type, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function ApresentacaoPage() {
   const { data: presentation, isLoading } = useMyPresentation();
   const { mutate: update } = useUpdatePresentation();
   const { data: handouts = [] } = useHandoutsComImagem();
 
-  const [mode, setModeLocal] = useState<PresentationMode>("placeholder");
-  const [fit, setFitLocal] = useState<ImageFit>("contain");
-  const [showTitle, setShowTitle] = useState(false);
-  const [lastTitle, setLastTitle] = useState<string | null>(null);
+  const [preview, setPreview] = useState<Partial<Pick<PresentationState, "mode" | "image_fit" | "show_title">>>({});
   const [carouselUrl, setCarouselUrl] = useState("");
   const [carouselTitle, setCarouselTitle] = useState("");
   const [presetName, setPresetName] = useState("");
   const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"handouts" | "carousel" | "config">("handouts");
-
-  useEffect(() => {
-    if (presentation) {
-      setModeLocal(presentation.mode);
-      setFitLocal(presentation.image_fit ?? "contain");
-      setShowTitle(presentation.show_title ?? false);
-      if (presentation.single_title) setLastTitle(presentation.single_title);
-    }
-  }, [presentation?.id]);
 
   if (isLoading) return (
     <>
@@ -57,18 +45,23 @@ export function ApresentacaoPage() {
     </>
   );
 
+  const currentPresentation = presentation;
+
   function save(payload: Partial<Omit<PresentationState, "id" | "user_id" | "updated_at">>) {
-    update({ id: presentation!.id, payload });
+    update({ id: currentPresentation.id, payload });
   }
 
+  const mode: PresentationMode = preview.mode ?? currentPresentation.mode;
+  const fit: ImageFit = preview.image_fit ?? currentPresentation.image_fit ?? "contain";
+  const showTitle = preview.show_title ?? currentPresentation.show_title ?? false;
+
   function limpar() {
-    setModeLocal("placeholder");
+    setPreview((current) => ({ ...current, mode: "placeholder" }));
     save({ mode: "placeholder", active_preset_id: null });
   }
 
   function exibir(image_url: string, titulo: string) {
-    setModeLocal("single");
-    setLastTitle(titulo);
+    setPreview((current) => ({ ...current, mode: "single" }));
     save({
       mode: "single",
       single_image_url: image_url,
@@ -78,17 +71,17 @@ export function ApresentacaoPage() {
 
   function toggleTitulo() {
     const next = !showTitle;
-    setShowTitle(next);
+    setPreview((current) => ({ ...current, show_title: next }));
     save({ show_title: next });
   }
 
   function handleSetFit(f: ImageFit) {
-    setFitLocal(f);
+    setPreview((current) => ({ ...current, image_fit: f }));
     save({ image_fit: f });
   }
 
   function iniciarCarrossel() {
-    setModeLocal("carousel");
+    setPreview((current) => ({ ...current, mode: "carousel" }));
     save({ mode: "carousel", active_preset_id: null });
   }
 
@@ -136,7 +129,7 @@ export function ApresentacaoPage() {
   }
 
   function carregarPreset(preset: CarouselPreset) {
-    setModeLocal("carousel");
+    setPreview((current) => ({ ...current, mode: "carousel" }));
     save({ mode: "carousel", active_preset_id: preset.id });
   }
 

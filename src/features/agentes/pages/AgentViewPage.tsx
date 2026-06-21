@@ -12,12 +12,12 @@ import { cn } from "@/shared/lib/utils";
 import { useRituais } from "@/features/rituais/hooks/useRituais";
 import { useItens } from "@/features/itens/hooks/useItens";
 import { Item } from "@/shared/types/item";
-import { CUSTO_PE, RitualElemento } from "@/shared/types/ritual";
+import { RitualElemento } from "@/shared/types/ritual";
 import { ArrowDown, ArrowUp, ChevronLeft, Gauge, Heart, Package, Pencil, Shield, Skull, Sparkles, Swords, Trash2, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 const ELEMENTO_COLORS: Record<RitualElemento, string> = {
@@ -164,8 +164,12 @@ export function AgentViewPage({ agenteId }: AgentViewPageProps) {
   const [expandedRitualId, setExpandedRitualId] = useState<string | null>(null);
   const [desperto, setDesperto] = useState(false);
   // Ajustes otimistas de recursos (PV/PE/SAN/PD) para resposta instantânea.
-  const [opt, setOpt] = useState<Record<string, number>>({});
-  useEffect(() => setOpt({}), [agenteId, desperto]);
+  const optScope = `${agenteId}:${desperto ? "suprema" : "base"}`;
+  const [optState, setOptState] = useState<{ scope: string; values: Record<string, number> }>({
+    scope: optScope,
+    values: {},
+  });
+  const opt = optState.scope === optScope ? optState.values : {};
 
   if (isLoading) return (
     <div className="flex h-full items-center justify-center">
@@ -203,7 +207,10 @@ export function AgentViewPage({ agenteId }: AgentViewPageProps) {
     const upper = max > 0 ? max : cur + delta;
     const next = Math.max(0, Math.min(upper, cur + delta));
     if (next === cur) return null;
-    setOpt((o) => ({ ...o, [af]: next }));
+    setOptState((current) => ({
+      scope: optScope,
+      values: { ...(current.scope === optScope ? current.values : {}), [af]: next },
+    }));
     update.mutate({
       id: agente.id,
       payload: ativo && fs ? { forma_suprema: { ...fs, [af]: next } } : { [af]: next },

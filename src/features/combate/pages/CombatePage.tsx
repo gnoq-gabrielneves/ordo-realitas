@@ -10,8 +10,9 @@ import { useAgentes } from "@/features/agentes/hooks/useAgentes";
 import { useSujeitos } from "@/features/sujeitos/hooks/useSujeitos";
 import { cn } from "@/shared/lib/utils";
 import {
-  ChevronDown, ChevronRight, Dices, Heart, Plus, RotateCcw, Search, Shield, Skull, Swords, Trash2, UserPlus, UserRound, Zap,
+  Activity, AlertTriangle, ChevronDown, ChevronRight, Dices, Heart, Plus, RotateCcw, Search, Shield, Skull, Swords, Trash2, UserPlus, UserRound, Zap,
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 type Fonte = "agente" | "sujeito" | "avulso";
@@ -25,6 +26,8 @@ interface Combatente {
   pvAtual: number;
   pvMax: number;
   imageUrl?: string | null;
+  condicoes?: string[];
+  nota?: string;
 }
 
 interface Estado {
@@ -35,14 +38,50 @@ interface Estado {
 
 const STORAGE_KEY = "ordo:combate";
 const QUICK = [-5, -1, 1, 5];
+const CONDICOES_RAPIDAS = ["Agarrado", "Caido", "Desprevenido", "Sangrando", "Vulneravel", "Atordoado", "Morrendo"];
+const ESTADO_INICIAL: Estado = { combatentes: [], round: 1, turnoId: null };
+
+function isFonte(value: unknown): value is Fonte {
+  return value === "agente" || value === "sujeito" || value === "avulso";
+}
+
+function isCombatente(value: unknown): value is Combatente {
+  if (!value || typeof value !== "object") return false;
+  const c = value as Partial<Combatente>;
+  return (
+    typeof c.id === "string" &&
+    isFonte(c.fonte) &&
+    typeof c.nome === "string" &&
+    (typeof c.iniciativa === "number" || c.iniciativa === null) &&
+    typeof c.pvAtual === "number" &&
+    typeof c.pvMax === "number" &&
+    (c.condicoes === undefined || (Array.isArray(c.condicoes) && c.condicoes.every((item) => typeof item === "string"))) &&
+    (c.nota === undefined || typeof c.nota === "string") &&
+    (c.refId === undefined || typeof c.refId === "string") &&
+    (c.imageUrl === undefined || c.imageUrl === null || typeof c.imageUrl === "string")
+  );
+}
+
+function isEstado(value: unknown): value is Estado {
+  if (!value || typeof value !== "object") return false;
+  const estado = value as Partial<Estado>;
+  return (
+    Array.isArray(estado.combatentes) &&
+    estado.combatentes.every(isCombatente) &&
+    typeof estado.round === "number" &&
+    (estado.turnoId === null || typeof estado.turnoId === "string")
+  );
+}
 
 function carregar(): Estado {
-  if (typeof window === "undefined") return { combatentes: [], round: 1, turnoId: null };
+  if (typeof window === "undefined") return ESTADO_INICIAL;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Estado;
+    if (!raw) return ESTADO_INICIAL;
+    const parsed: unknown = JSON.parse(raw);
+    return isEstado(parsed) ? parsed : ESTADO_INICIAL;
   } catch { /* ignore */ }
-  return { combatentes: [], round: 1, turnoId: null };
+  return ESTADO_INICIAL;
 }
 
 // Extrai o bônus de iniciativa de uma string como "2O+10" ou "+5".
@@ -57,9 +96,8 @@ const d20 = () => Math.floor(Math.random() * 20) + 1;
 export function CombatePage() {
   const { data: agentes = [] } = useAgentes();
   const { data: sujeitos = [] } = useSujeitos();
-  const [estado, setEstado] = useState<Estado>({ combatentes: [], round: 1, turnoId: null });
+  const [estado, setEstado] = useState<Estado>(() => carregar());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [hydrated, setHydrated] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addTab, setAddTab] = useState<"pessoa" | "criatura" | "agente">("pessoa");
   const [addBusca, setAddBusca] = useState("");
@@ -67,10 +105,14 @@ export function CombatePage() {
   const [avulsoNome, setAvulsoNome] = useState("");
   const [avulsoPv, setAvulsoPv] = useState("");
 
-  useEffect(() => { setEstado(carregar()); setHydrated(true); }, []);
-  useEffect(() => { if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(estado)); }, [estado, hydrated]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(estado)); }, [estado]);
 
   const ordenados = [...estado.combatentes].sort((a, b) => (b.iniciativa ?? -999) - (a.iniciativa ?? -999));
+  const turnoAtual = ordenados.find((c) => c.id === estado.turnoId) ?? null;
+  const proximo = turnoAtual ? ordenados[(ordenados.findIndex((c) => c.id === turnoAtual.id) + 1) % ordenados.length] : ordenados[0] ?? null;
+  const ativos = estado.combatentes.filter((c) => c.pvAtual > 0).length;
+  const feridos = estado.combatentes.filter((c) => c.pvMax > 0 && c.pvAtual > 0 && c.pvAtual <= c.pvMax / 2).length;
+  const caidos = estado.combatentes.filter((c) => c.pvAtual <= 0 || (c.condicoes ?? []).includes("Morrendo")).length;
 
   const patch = (id: string, p: Partial<Combatente>) =>
     setEstado((e) => ({ ...e, combatentes: e.combatentes.map((c) => (c.id === id ? { ...c, ...p } : c)) }));
@@ -80,7 +122,8 @@ export function CombatePage() {
     setEstado((e) => {
       const n = e.combatentes.filter((c) => c.refId === novo.refId && novo.refId != null).length;
       const nome = n > 0 ? `${novo.nomeBase} ${n + 1}` : novo.nomeBase;
-      const { nomeBase: _omit, ...rest } = novo;
+      const { nomeBase, ...rest } = novo;
+      void nomeBase;
       return { ...e, combatentes: [...e.combatentes, { ...rest, id: crypto.randomUUID(), nome }] };
     });
   }
@@ -128,6 +171,15 @@ export function CombatePage() {
     patch(c.id, { pvAtual: next });
   }
 
+  function toggleCondicao(c: Combatente, condicao: string) {
+    const atuais = c.condicoes ?? [];
+    patch(c.id, {
+      condicoes: atuais.includes(condicao)
+        ? atuais.filter((item) => item !== condicao)
+        : [...atuais, condicao],
+    });
+  }
+
   function rolarUm(c: Combatente) {
     let bonus = 0;
     if (c.fonte === "agente") bonus = agentes.find((a) => a.id === c.refId)?.agi ?? 0;
@@ -156,12 +208,17 @@ export function CombatePage() {
   }
 
   function reset() {
-    setEstado({ combatentes: [], round: 1, turnoId: null });
+    setEstado(ESTADO_INICIAL);
     setExpanded(new Set());
   }
 
   function toggleExpand(id: string) {
-    setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setExpanded((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   }
 
   return (
@@ -169,31 +226,43 @@ export function CombatePage() {
       <AppHeader title="Combate" />
       <main className="flex-1 overflow-y-auto p-6 space-y-5">
 
-        {/* Controles */}
-        <div className="flex items-center gap-3 flex-wrap rounded-md border border-border bg-card px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Rodada</span>
-            <span className="text-2xl font-bold tabular-nums leading-none">{estado.round}</span>
+        <section className="grid gap-3 xl:grid-cols-[1fr_auto]">
+          <div className="grid gap-3 md:grid-cols-4">
+            <CombatStat label="Rodada" value={estado.round} icon={<Swords className="h-4 w-4" />} />
+            <CombatStat label="Ativos" value={ativos} icon={<Activity className="h-4 w-4" />} />
+            <CombatStat label="Machucados" value={feridos} icon={<Heart className="h-4 w-4" />} />
+            <CombatStat label="Caídos" value={caidos} icon={<Skull className="h-4 w-4" />} danger={caidos > 0} />
           </div>
-          <div className="h-8 w-px bg-border mx-1" />
-          <Button size="sm" onClick={proximoTurno} disabled={ordenados.length === 0}>
-            <Swords className="h-3.5 w-3.5 mr-1.5" /> Próximo turno
-          </Button>
-          <Button size="sm" variant="outline" onClick={rolarTodos} disabled={ordenados.length === 0}>
-            <Dices className="h-3.5 w-3.5 mr-1.5" /> Rolar iniciativa
-          </Button>
-          <ConfirmDialog
-            title="Limpar combate"
-            description="Remove todos os combatentes e zera a rodada. Esta ação não pode ser desfeita."
-            confirmLabel="Limpar combate"
-            icon={<RotateCcw className="h-4 w-4 text-destructive" />}
-            onConfirm={reset}
-          >
-            <Button size="sm" variant="ghost" className="ml-auto text-destructive hover:text-destructive">
-              <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Limpar
-            </Button>
-          </ConfirmDialog>
-        </div>
+
+          <div className="flex flex-col justify-between gap-3 border border-border bg-card p-4 xl:w-80">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Turno atual</p>
+              <p className="mt-1 truncate text-lg font-semibold">{turnoAtual?.nome ?? "Nenhum combatente"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Proximo: {proximo?.id === turnoAtual?.id ? "fim da rodada" : proximo?.nome ?? "aguardando iniciativa"}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={proximoTurno} disabled={ordenados.length === 0}>
+                <Swords className="mr-1.5 h-3.5 w-3.5" /> Próximo
+              </Button>
+              <Button size="sm" variant="outline" onClick={rolarTodos} disabled={ordenados.length === 0}>
+                <Dices className="mr-1.5 h-3.5 w-3.5" /> Iniciativa
+              </Button>
+              <ConfirmDialog
+                title="Limpar combate"
+                description="Remove todos os combatentes e zera a rodada. Esta ação não pode ser desfeita."
+                confirmLabel="Limpar combate"
+                icon={<RotateCcw className="h-4 w-4 text-destructive" />}
+                onConfirm={reset}
+              >
+                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </ConfirmDialog>
+            </div>
+          </div>
+        </section>
 
         {/* Adicionar combatentes */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -218,6 +287,7 @@ export function CombatePage() {
               const isExp = expanded.has(c.id);
               const pct = c.pvMax > 0 ? Math.min(100, (c.pvAtual / c.pvMax) * 100) : 0;
               const morto = c.pvAtual <= 0;
+              const condicoes = c.condicoes ?? [];
               return (
                 <div key={c.id} className={cn(
                   "rounded-md border bg-card transition-colors",
@@ -239,7 +309,7 @@ export function CombatePage() {
                       c.fonte === "sujeito" ? "border-red-500/40" : "border-border"
                     )}>
                       {c.imageUrl
-                        ? <img src={c.imageUrl} alt="" className="h-full w-full object-cover" />
+                        ? <Image src={c.imageUrl} alt="" width={36} height={36} className="h-full w-full object-cover" unoptimized />
                         : c.fonte === "sujeito" ? <Skull className="h-4 w-4 text-red-400/50" />
                         : c.fonte === "agente" ? <Shield className="h-4 w-4 text-muted-foreground/50" />
                         : <UserRound className="h-4 w-4 text-muted-foreground/50" />}
@@ -249,6 +319,18 @@ export function CombatePage() {
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         {c.fonte === "agente" ? "Agente" : c.fonte === "sujeito" ? "Sujeito" : "Avulso"}
                       </p>
+                      {condicoes.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {condicoes.slice(0, 2).map((condicao) => (
+                            <span key={condicao} className="border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 text-[9px] uppercase tracking-wider text-amber-700">
+                              {condicao}
+                            </span>
+                          ))}
+                          {condicoes.length > 2 && (
+                            <span className="text-[9px] text-muted-foreground">+{condicoes.length - 2}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* defesa */}
@@ -313,7 +395,37 @@ export function CombatePage() {
                     </button>
                   </div>
 
-                  {isExp && <DetalhesCombatente c={c} agentes={agentes} sujeitos={sujeitos} />}
+                  {isExp && (
+                    <div className="border-t border-border px-4 py-3">
+                      <div className="mb-4">
+                        <p className="mb-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                          <AlertTriangle className="h-3 w-3" />
+                          Condições rápidas
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {CONDICOES_RAPIDAS.map((condicao) => {
+                            const marcada = condicoes.includes(condicao);
+                            return (
+                              <button
+                                key={condicao}
+                                type="button"
+                                onClick={() => toggleCondicao(c, condicao)}
+                                className={cn(
+                                  "border px-2 py-1 text-[10px] uppercase tracking-wider transition-colors",
+                                  marcada
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                                )}
+                              >
+                                {condicao}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <DetalhesCombatente c={c} agentes={agentes} sujeitos={sujeitos} />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -375,7 +487,7 @@ export function CombatePage() {
                   className="w-full flex items-center gap-3 px-2.5 py-2 rounded-md hover:bg-muted transition-colors text-left"
                 >
                   <div className={cn("h-8 w-8 shrink-0 rounded-full overflow-hidden border flex items-center justify-center bg-muted", isSuj ? "border-red-500/40" : "border-border")}>
-                    {img ? <img src={img} alt="" className="h-full w-full object-cover" /> : isSuj ? <Skull className="h-3.5 w-3.5 text-red-400/50" /> : <Shield className="h-3.5 w-3.5 text-muted-foreground/50" />}
+                    {img ? <Image src={img} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized /> : isSuj ? <Skull className="h-3.5 w-3.5 text-red-400/50" /> : <Shield className="h-3.5 w-3.5 text-muted-foreground/50" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{nome}</p>
@@ -432,7 +544,7 @@ function DetalhesCombatente({ c, agentes, sujeitos }: {
     const s = sujeitos?.find((x) => x.id === c.refId);
     if (!s) return null;
     return (
-      <div className="border-t border-border px-4 py-3 space-y-3 text-sm">
+      <div className="space-y-3 text-sm">
         {s.acoes.length > 0 && (
           <BlocoDet titulo="Ações" icon={<Swords className="h-3 w-3" />}>
             {s.acoes.map((a, i) => (
@@ -463,7 +575,7 @@ function DetalhesCombatente({ c, agentes, sujeitos }: {
     const ataques = a.ataques ?? [];
     const habilidades = a.habilidades ?? [];
     return (
-      <div className="border-t border-border px-4 py-3 space-y-3 text-sm">
+      <div className="space-y-3 text-sm">
         {ataques.length > 0 && (
           <BlocoDet titulo="Ataques" icon={<Swords className="h-3 w-3" />}>
             {ataques.map((at, i) => (
@@ -486,6 +598,29 @@ function DetalhesCombatente({ c, agentes, sujeitos }: {
     );
   }
   return null;
+}
+
+function CombatStat({
+  label,
+  value,
+  icon,
+  danger,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <div className={cn(
+      "border bg-card p-4",
+      danger ? "border-destructive/40" : "border-border",
+    )}>
+      <div className={cn("mb-2", danger ? "text-destructive" : "text-primary")}>{icon}</div>
+      <p className="text-xl font-semibold tabular-nums leading-none">{value}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+    </div>
+  );
 }
 
 function BlocoDet({ titulo, icon, children }: { titulo: string; icon: React.ReactNode; children: React.ReactNode }) {

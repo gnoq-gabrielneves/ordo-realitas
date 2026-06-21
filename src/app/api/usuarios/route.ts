@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server";
+import { isRole } from "@/shared/constants/roles";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
   if (!body?.email || !body?.password) {
     return NextResponse.json({ error: "E-mail e senha são obrigatórios." }, { status: 400 });
   }
-  const role = ["mestre", "jogador", "tv"].includes(body.role ?? "") ? body.role! : "jogador";
+  const role = isRole(body.role) ? body.role : "jogador";
 
   const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },

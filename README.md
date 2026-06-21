@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ordo Realitas
 
-## Getting Started
+Ordo Realitas e um painel para mestres de RPG gerenciarem campanhas, fichas, sujeitos, lugares, itens, rituais, combate e apresentacao de handouts em uma tela separada para jogadores.
 
-First, run the development server:
+O projeto nasceu como uma ferramenta de mesa para campanhas inspiradas em investigacao paranormal: um arquivo operacional, com permissoes por papel, fichas editaveis, combate rapido e modo TV/tela de exibicao.
+
+## Estado do projeto
+
+Este app ainda esta em fase privada/experimental. A base ja funciona para uso em mesa propria, mas ainda estamos organizando documentacao, schema do Supabase, permissoes por campanha e experiencia de onboarding antes de abrir para comunidade.
+
+## Stack
+
+- Next.js 16
+- React 19
+- TypeScript strict
+- Tailwind CSS 4
+- Supabase Auth, Database e Storage
+- TanStack Query
+- shadcn/radix-ui
+- lucide-react
+
+## Modulos
+
+- **Painel**: visao geral do arquivo, contadores e atalhos.
+- **Campanhas**: campanhas, missoes, cenas, roteiro e handouts.
+- **Combate**: iniciativa, rodada, PV e detalhes de agentes/sujeitos.
+- **Apresentacao**: controle de TV/tela de exibicao, handouts, carrossel e presets.
+- **Agentes**: fichas de jogadores, combate, pericias, inventario, rituais e Hexatombe.
+- **Sujeitos**: NPCs, criaturas, acoes, habilidades e estatisticas.
+- **Lugares**: locais, atmosfera, segredos e pontos de interesse.
+- **Itens**: catalogo de equipamentos.
+- **Rituais**: catalogo paranormal.
+- **Usuarios**: papeis, criacao de usuarios e vinculo de fichas.
+
+## Comecando
+
+Use npm neste projeto. Nao use pnpm/yarn/bun aqui enquanto o projeto mantiver `package-lock.json`.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Para variaveis de ambiente, veja [docs/setup.md](docs/setup.md).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+```bash
+npm run dev      # servidor local
+npm run build    # build de producao
+npm run start    # servidor de producao
+npm run lint     # lint
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Documentacao
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Visao do produto](docs/product-vision.md)
+- [Setup local](docs/setup.md)
+- [Arquitetura](docs/architecture.md)
+- [Supabase](docs/supabase.md)
+- [Guia de contribuicao](docs/contributing.md)
+- [Roadmap](docs/roadmap.md)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Notas de desenvolvimento
 
-## Deploy on Vercel
+- O app usa rotas privadas, publicas e uma rota de TV/tela de exibicao via App Router.
+- A autorizacao atual e baseada em papeis globais: `mestre`, `jogador`, `tv`.
+- O proximo passo estrutural e migrar para permissoes por campanha.
+- O schema do Supabase ainda precisa virar migrations versionadas.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Licenca e conteudo
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este repositorio e uma ferramenta de organizacao de mesa. Ao abrir para comunidade, separar claramente codigo, marca, conteudo autoral da mesa e referencias de sistema sera essencial.

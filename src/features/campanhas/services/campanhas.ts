@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { Campanha, CampanhaPayload, Cena, CenaPayload, Missao, MissaoPayload } from "@/shared/types/campaign";
 
 const supabase = createClient();
@@ -18,8 +19,8 @@ export async function getCampanha(id: string): Promise<Campanha> {
 }
 
 export async function createCampanha(payload: CampanhaPayload): Promise<Campanha> {
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data, error } = await supabase.from("campaigns").insert({ ...payload, user_id: user!.id }).select().single();
+  const userId = await requireCurrentUserId(supabase);
+  const { data, error } = await supabase.from("campaigns").insert({ ...payload, user_id: userId }).select().single();
   if (error) throw error;
   return data;
 }
@@ -54,8 +55,8 @@ export async function getMissao(id: string): Promise<Missao> {
 }
 
 export async function createMissao(payload: MissaoPayload): Promise<Missao> {
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data, error } = await supabase.from("missions").insert({ ...payload, user_id: user!.id }).select().single();
+  const userId = await requireCurrentUserId(supabase);
+  const { data, error } = await supabase.from("missions").insert({ ...payload, user_id: userId }).select().single();
   if (error) throw error;
   return data;
 }
@@ -125,8 +126,8 @@ export async function getCena(id: string): Promise<Cena> {
 }
 
 export async function createCena(payload: CenaPayload): Promise<Cena> {
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data, error } = await supabase.from("scenes").insert({ ...payload, user_id: user!.id }).select().single();
+  const userId = await requireCurrentUserId(supabase);
+  const { data, error } = await supabase.from("scenes").insert({ ...payload, user_id: userId }).select().single();
   if (error) throw error;
   return data;
 }

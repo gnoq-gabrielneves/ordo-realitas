@@ -1,14 +1,58 @@
-import { BookOpen, LayoutDashboard, MapPin, Monitor, Package, Shield, Sparkles, Swords, UserCog, Users } from "lucide-react";
+import {
+  BookOpen,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  MapPin,
+  Monitor,
+  Package,
+  Shield,
+  Sparkles,
+  Swords,
+  UserCog,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
-export const NAV_ITEMS = [
-  { label: "Painel",      href: "/home",        icon: LayoutDashboard },
-  { label: "Campanhas",   href: "/campanhas",   icon: BookOpen },
-  { label: "Combate",     href: "/combate",     icon: Swords },
-  { label: "Sujeitos",    href: "/sujeitos",    icon: Users },
-  { label: "Lugares",     href: "/lugares",     icon: MapPin },
-  { label: "Agentes",     href: "/agentes",     icon: Shield },
-  { label: "Itens",       href: "/itens",       icon: Package },
-  { label: "Rituais",     href: "/rituais",     icon: Sparkles },
-  { label: "Apresentação",href: "/apresentacao",icon: Monitor },
-  { label: "Usuários",    href: "/usuarios",    icon: UserCog },
-] as const;
+export type NavItem = {
+  label: string;
+  href: `/${string}`;
+  icon: LucideIcon;
+};
+
+export type NavGroup = {
+  label: string;
+  items: readonly NavItem[];
+};
+
+export const NAV_GROUPS = [
+  {
+    label: "Central",
+    items: [
+      { label: "Painel", href: "/home", icon: LayoutDashboard },
+      { label: "Campanhas", href: "/campanhas", icon: BookOpen },
+      { label: "Escudo", href: "/escudo", icon: ClipboardList },
+      { label: "Combate", href: "/combate", icon: Swords },
+      { label: "Apresentação", href: "/apresentacao", icon: Monitor },
+    ],
+  },
+  {
+    label: "Arquivos",
+    items: [
+      { label: "Agentes", href: "/agentes", icon: Shield },
+      { label: "Sujeitos", href: "/sujeitos", icon: Users },
+      { label: "Lugares", href: "/lugares", icon: MapPin },
+      { label: "Itens", href: "/itens", icon: Package },
+      { label: "Rituais", href: "/rituais", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { label: "Documentação", href: "/documentacao", icon: FileText },
+      { label: "Usuários", href: "/usuarios", icon: UserCog },
+    ],
+  },
+] as const satisfies readonly NavGroup[];
+
+export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => [...group.items]);

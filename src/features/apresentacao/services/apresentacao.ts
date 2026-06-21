@@ -1,11 +1,11 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { PresentationPayload, PresentationState } from "@/shared/types/presentation";
 
 const supabase = createClient();
 
 export async function getMyPresentation(): Promise<PresentationState> {
-  const { data: { user } } = await supabase.auth.getUser();
-  const uid = user!.id;
+  const uid = await requireCurrentUserId(supabase);
 
   const { data: existing } = await supabase
     .from("presentation_state")

@@ -8,7 +8,7 @@ import { AppHeader } from "@/shared/components/AppHeader/AppHeader";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { SceneTipo } from "@/shared/types/campaign";
-import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, Clock, MapPin, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, Clock, FileText, MapPin, MessageSquare, Pencil, StickyNote } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -38,9 +38,10 @@ export function CenaViewPage({ campaignId, missaoId, cenaId }: CenaViewPageProps
   const { data: lugar } = useLugar(cena?.lugar_id ?? "");
   const { data: sujeitos = [] } = useSujeitos();
 
-  const idx = todasCenas.findIndex((c) => c.id === cenaId);
-  const prev = idx > 0 ? todasCenas[idx - 1] : null;
-  const next = idx < todasCenas.length - 1 ? todasCenas[idx + 1] : null;
+  const cenasOrdenadas = [...todasCenas].sort((a, b) => a.ordem - b.ordem);
+  const idx = cenasOrdenadas.findIndex((c) => c.id === cenaId);
+  const prev = idx > 0 ? cenasOrdenadas[idx - 1] : null;
+  const next = idx < cenasOrdenadas.length - 1 ? cenasOrdenadas[idx + 1] : null;
 
   if (isLoading) return (
     <>
@@ -64,8 +65,7 @@ export function CenaViewPage({ campaignId, missaoId, cenaId }: CenaViewPageProps
     <>
       <AppHeader title={cena.titulo} />
       <main className="flex-1 overflow-y-auto p-6">
-        {/* Navegação topo */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href={`/campanhas/${campaignId}/missoes/${missaoId}`}
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -80,129 +80,145 @@ export function CenaViewPage({ campaignId, missaoId, cenaId }: CenaViewPageProps
           </Button>
         </div>
 
-        {/* Cabeçalho da cena */}
-        <div className="mb-6">
-          {cena.parte && (
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground mb-1">{cena.parte}</p>
-          )}
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono text-muted-foreground">
-              Cena {String(idx + 1).padStart(2, "0")}/{String(todasCenas.length).padStart(2, "0")}
-            </span>
-            <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${TIPO_COLOR[cena.tipo]}`}>
-              {TIPO_LABEL[cena.tipo]}
-            </Badge>
-          </div>
-          <h1 className="text-xl font-semibold text-foreground">{cena.titulo}</h1>
-        </div>
-
-        {/* Texto descritivo — destacado visualmente */}
-        {cena.texto_descritivo && (
-          <div className="mb-6 border-l-4 border-primary/40 bg-primary/5 p-5">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-primary/60 mb-3">Texto para os agentes</p>
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap italic">{cena.texto_descritivo}</p>
-          </div>
-        )}
-
-        {/* Roteiro — narração e diálogos */}
-        {cena.roteiro?.length > 0 && (
-          <div className="mb-8 rounded-lg border border-border bg-card overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-5 py-2.5">
-              <BookOpen className="h-4 w-4 text-primary" />
-              <p className="text-xs font-semibold uppercase tracking-widest text-foreground">Roteiro</p>
-              <span className="text-[11px] text-muted-foreground">· narração e diálogos</span>
+        <section className="mb-6 border border-border bg-card p-5">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+            <div>
+              {cena.parte && (
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{cena.parte}</p>
+              )}
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  Cena {String(idx + 1).padStart(2, "0")}/{String(cenasOrdenadas.length).padStart(2, "0")}
+                </span>
+                <Badge variant="outline" className={`rounded-sm text-[10px] uppercase tracking-wider ${TIPO_COLOR[cena.tipo]}`}>
+                  {TIPO_LABEL[cena.tipo]}
+                </Badge>
+                {cena.urgencia && (
+                  <Badge variant="secondary" className="rounded-sm text-[10px] uppercase tracking-wider">
+                    <Clock className="h-3 w-3" /> Urgência
+                  </Badge>
+                )}
+              </div>
+              <h1 className="text-2xl font-semibold text-foreground">{cena.titulo}</h1>
             </div>
-            <div className="px-5 py-6 sm:px-8">
-              <RoteiroView roteiro={cena.roteiro} sujeitos={sujeitos} />
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <SceneStat label="Roteiro" value={cena.roteiro.length} />
+              <SceneStat label="Rodadas" value={cena.urgencia_rodadas.length} />
+              <SceneStat label="Pontos" value={lugar?.pontos_de_interesse.length ?? 0} />
             </div>
           </div>
-        )}
+        </section>
 
-        {/* Urgência — pressão de tempo da investigação */}
-        {cena.urgencia && cena.urgencia_rodadas.length > 0 && (
-          <div className="mb-6">
-            <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
-              <Clock className="h-3.5 w-3.5" /> Urgência — a cada rodada
-            </p>
-            <div className="rounded-md border border-amber-500/30 bg-amber-500/[0.05] divide-y divide-amber-500/15">
-              {cena.urgencia_rodadas.map((r, i) => (
-                <div key={i} className="flex gap-3 p-3">
-                  <span className="shrink-0 text-[11px] font-mono font-semibold text-amber-600 dark:text-amber-400 w-9">R{i + 1}</span>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{r}</p>
+        <section className="grid gap-6 xl:grid-cols-[1fr_320px]">
+          <div className="space-y-6">
+            {cena.texto_descritivo && (
+              <Block title="Texto para os jogadores" icon={<BookOpen className="h-4 w-4" />}>
+                <p className="whitespace-pre-wrap text-sm italic leading-relaxed text-foreground">{cena.texto_descritivo}</p>
+              </Block>
+            )}
+
+            {cena.roteiro?.length > 0 && (
+              <Block title="Roteiro" icon={<MessageSquare className="h-4 w-4" />}>
+                <div className="px-1 py-2 sm:px-3">
+                  <RoteiroView roteiro={cena.roteiro} sujeitos={sujeitos} />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </Block>
+            )}
 
-        {/* Pontos de interesse do lugar vinculado */}
-        {lugar && lugar.pontos_de_interesse.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" /> Pontos de Interesse — {lugar.name}
-              </p>
-              <Link href={`/lugares/${lugar.id}`} className="text-[11px] text-primary/80 hover:text-primary transition-colors">
-                Ver lugar →
-              </Link>
-            </div>
-            <div className="border border-border bg-card divide-y divide-border/50">
-              {lugar.pontos_de_interesse.map((p, i) => (
-                <div key={i} className="p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">{p.nome}</p>
-                  {p.descricao && <p className="text-sm text-muted-foreground mt-0.5">{p.descricao}</p>}
-                  {(p.testes ?? []).length > 0 && (
-                    <div className="mt-2 space-y-1.5">
-                      {(p.testes ?? []).map((t, ti) => (
-                        <div key={ti} className="rounded border border-border/60 bg-muted/20 px-2.5 py-1.5">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[11px] font-semibold text-primary/90">{t.pericia || "Perícia"}</span>
-                            {t.dt && <span className="text-[10px] text-muted-foreground border border-border rounded px-1.5 py-0.5">DT {t.dt}</span>}
-                            {(t.tipo ?? "jogador") === "mestre" ? (
-                              <span className="text-[10px] text-amber-400 border border-amber-500/40 bg-amber-500/10 rounded px-1.5 py-0.5">Mestre pede</span>
-                            ) : (
-                              <span className="text-[10px] text-sky-400 border border-sky-500/40 bg-sky-500/10 rounded px-1.5 py-0.5">Jogador escolhe</span>
-                            )}
-                          </div>
-                          {t.descricao && <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t.descricao}</p>}
-                          {(t.sucesso || t.falha) && (
-                            <div className="mt-1.5 space-y-1">
-                              {t.sucesso && (
-                                <p className="text-xs leading-relaxed">
-                                  <span className="font-semibold text-emerald-500">Passou: </span>
-                                  <span className="text-foreground/80">{t.sucesso}</span>
-                                </p>
-                              )}
-                              {t.falha && (
-                                <p className="text-xs leading-relaxed">
-                                  <span className="font-semibold text-red-500">Falhou: </span>
-                                  <span className="text-foreground/80">{t.falha}</span>
-                                </p>
+            {cena.urgencia && cena.urgencia_rodadas.length > 0 && (
+              <Block title="Urgência - a cada rodada" icon={<Clock className="h-4 w-4" />}>
+                <div className="divide-y divide-amber-500/15 border border-amber-500/30 bg-amber-500/[0.05]">
+                  {cena.urgencia_rodadas.map((r, i) => (
+                    <div key={i} className="flex gap-3 p-3">
+                      <span className="w-9 shrink-0 font-mono text-[11px] font-semibold text-amber-600">R{i + 1}</span>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{r}</p>
+                    </div>
+                  ))}
+                </div>
+              </Block>
+            )}
+
+            {lugar && lugar.pontos_de_interesse.length > 0 && (
+              <Block
+                title={`Pontos de interesse - ${lugar.name}`}
+                icon={<MapPin className="h-4 w-4" />}
+                action={<Link href={`/lugares/${lugar.id}`} className="text-[11px] text-primary/80 transition-colors hover:text-primary">Ver lugar</Link>}
+              >
+                <div className="divide-y divide-border/50 border border-border bg-background">
+                  {lugar.pontos_de_interesse.map((p, i) => (
+                    <div key={i} className="p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-foreground">{p.nome}</p>
+                      {p.descricao && <p className="mt-0.5 text-sm text-muted-foreground">{p.descricao}</p>}
+                      {(p.testes ?? []).length > 0 && (
+                        <div className="mt-2 space-y-1.5">
+                          {(p.testes ?? []).map((t, ti) => (
+                            <div key={ti} className="border border-border/60 bg-muted/20 px-2.5 py-1.5">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[11px] font-semibold text-primary/90">{t.pericia || "Perícia"}</span>
+                                {t.dt && <span className="border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">DT {t.dt}</span>}
+                                {(t.tipo ?? "jogador") === "mestre" ? (
+                                  <span className="border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-600">Mestre pede</span>
+                                ) : (
+                                  <span className="border border-sky-500/40 bg-sky-500/10 px-1.5 py-0.5 text-[10px] text-sky-600">Jogador escolhe</span>
+                                )}
+                              </div>
+                              {t.descricao && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t.descricao}</p>}
+                              {(t.sucesso || t.falha) && (
+                                <div className="mt-1.5 space-y-1">
+                                  {t.sucesso && (
+                                    <p className="text-xs leading-relaxed">
+                                      <span className="font-semibold text-emerald-600">Passou: </span>
+                                      <span className="text-foreground/80">{t.sucesso}</span>
+                                    </p>
+                                  )}
+                                  {t.falha && (
+                                    <p className="text-xs leading-relaxed">
+                                      <span className="font-semibold text-red-600">Falhou: </span>
+                                      <span className="text-foreground/80">{t.falha}</span>
+                                    </p>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </Block>
+            )}
 
-        {/* Notas do mestre */}
-        {cena.notas_mestre && (
-          <div className="mb-6">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground mb-2">Notas do Narrador</p>
-            <div className="border border-border bg-card p-4">
-              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{cena.notas_mestre}</p>
-            </div>
+            {cena.notas_mestre && (
+              <Block title="Notas do mestre" icon={<StickyNote className="h-4 w-4" />}>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{cena.notas_mestre}</p>
+              </Block>
+            )}
           </div>
-        )}
 
-        {/* Navegação entre cenas */}
-        <div className="flex items-center justify-between pt-6 border-t border-border mt-8">
+          <aside className="space-y-4">
+            <div className="sticky top-6 space-y-4">
+              <div className="border border-border bg-card p-4">
+                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Condução</p>
+                <div className="mt-3 space-y-2 text-sm">
+                  <GuideLine icon={<FileText className="h-3.5 w-3.5" />} label={cena.texto_descritivo ? "Texto pronto" : "Sem texto narrável"} />
+                  <GuideLine icon={<MessageSquare className="h-3.5 w-3.5" />} label={`${cena.roteiro.length} blocos de roteiro`} />
+                  <GuideLine icon={<MapPin className="h-3.5 w-3.5" />} label={lugar?.name ?? "Sem lugar vinculado"} />
+                  <GuideLine icon={<StickyNote className="h-3.5 w-3.5" />} label={cena.notas_mestre ? "Notas internas" : "Sem notas internas"} />
+                </div>
+              </div>
+
+              <div className="border border-primary/30 bg-primary/5 p-4">
+                <p className="text-sm font-semibold">Durante a sessão</p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Comece pelo texto para os jogadores, siga os blocos de roteiro e use os pontos de interesse como consulta rápida quando os agentes investigarem o lugar.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
           {prev ? (
             <Button
               variant="outline" size="sm"
@@ -232,5 +248,48 @@ export function CenaViewPage({ campaignId, missaoId, cenaId }: CenaViewPageProps
         </div>
       </main>
     </>
+  );
+}
+
+function SceneStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-border bg-background px-3 py-2">
+      <p className="text-sm font-semibold tabular-nums">{value}</p>
+      <p className="mt-0.5 text-[9px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function Block({
+  title,
+  icon,
+  action,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          {icon}
+          {title}
+        </p>
+        {action}
+      </div>
+      <div className="border border-border bg-card p-5">{children}</div>
+    </section>
+  );
+}
+
+function GuideLine({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <span className="text-primary">{icon}</span>
+      <span className="truncate">{label}</span>
+    </div>
   );
 }

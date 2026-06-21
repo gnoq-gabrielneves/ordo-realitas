@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUser, requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { AgentFormaSuprema, AgentSheet, AgentSheetPayload } from "@/shared/types/agent";
 
 const supabase = createClient();
@@ -32,7 +33,7 @@ export async function getAgente(id: string): Promise<AgentSheet> {
 }
 
 export async function getMyAgente(): Promise<AgentSheet | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await requireCurrentUser(supabase).catch(() => null);
   if (!user) return null;
   const { data } = await supabase
     .from("agent_sheets")
@@ -43,7 +44,7 @@ export async function getMyAgente(): Promise<AgentSheet | null> {
 }
 
 export async function createAgente(payload: Partial<AgentSheetPayload>): Promise<AgentSheet> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await requireCurrentUserId(supabase);
   const defaults: Omit<AgentSheetPayload, "profile_id"> = {
     nome: null, image_url: null, origem: null, classe: null, trilha: null, nex: 5,
     tipo: "padrao", codinome: null, estigmas: [],
@@ -62,7 +63,7 @@ export async function createAgente(payload: Partial<AgentSheetPayload>): Promise
   };
   const { data, error } = await supabase
     .from("agent_sheets")
-    .insert({ ...defaults, ...payload, user_id: user!.id })
+    .insert({ ...defaults, ...payload, user_id: userId })
     .select()
     .single();
   if (error) throw error;
