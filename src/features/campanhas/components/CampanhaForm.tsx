@@ -119,7 +119,7 @@ export function CampanhaForm({ defaultValues, onSubmit, isPending }: CampanhaFor
       </div>
 
       <aside className="space-y-4">
-        <div className="sticky top-6 space-y-4">
+        <div className="sticky top-24 space-y-4">
           <div className="border border-primary/30 bg-primary/5 p-4">
             <Target className="mb-3 h-5 w-5 text-primary" />
             <p className="text-sm font-semibold">Modelo de campanha</p>

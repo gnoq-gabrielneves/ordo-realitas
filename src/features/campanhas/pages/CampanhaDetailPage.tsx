@@ -1,7 +1,6 @@
 "use client";
 
 import { useCampanha, useDeleteCampanha, useMissoes } from "@/features/campanhas/hooks/useCampanhas";
-import { AppHeader } from "@/shared/components/AppHeader/AppHeader";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -10,10 +9,11 @@ import { ArrowLeft, BookOpen, FileText, Flag, Pencil, PlusIcon, ScrollText, Shie
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 
 interface CampanhaDetailPageProps { id: string }
 
-function InfoTile({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
+function InfoTile({ label, value, icon }: { label: string; value: string | number; icon: ReactNode }) {
   return (
     <div className="border border-border bg-card p-4">
       <div className="mb-3 text-muted-foreground">{icon}</div>
@@ -25,7 +25,7 @@ function InfoTile({ label, value, icon }: { label: string; value: string | numbe
 
 function TextBlock({ title, children, muted = false }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   muted?: boolean;
 }) {
   return (
@@ -106,28 +106,23 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
   const router = useRouter();
   const { data: campanha, isLoading, isError } = useCampanha(id);
   const { data: missoes = [] } = useMissoes(id);
-  const { mutate: deletar, isPending: deleting } = useDeleteCampanha();
+  const { mutateAsync: deletar, isPending: deleting } = useDeleteCampanha();
 
-  function handleDelete() {
-    deletar(id, { onSuccess: () => router.push("/campanhas") });
+  async function handleDelete() {
+    await deletar(id);
+    router.replace("/campanhas");
   }
 
   if (isLoading) return (
-    <>
-      <AppHeader title="Campanha" />
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-8 w-72 animate-pulse bg-muted" />)}</div>
-      </main>
-    </>
+    <main className="flex-1 overflow-y-auto p-5 lg:p-8">
+      <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-8 w-72 animate-pulse bg-muted" />)}</div>
+    </main>
   );
 
   if (isError || !campanha) return (
-    <>
-      <AppHeader title="Campanha" />
-      <main className="flex-1 overflow-y-auto p-6">
-        <p className="text-sm text-destructive">Campanha não encontrada nos arquivos.</p>
-      </main>
-    </>
+    <main className="flex-1 overflow-y-auto p-5 lg:p-8">
+      <p className="text-sm text-destructive">Campanha não encontrada nos arquivos.</p>
+    </main>
   );
 
   const prologo = missoes.find((m) => m.is_prologo);
@@ -135,14 +130,24 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
   const orderedMissions = prologo ? [prologo, ...missoesPrincipais] : missoesPrincipais;
 
   return (
-    <>
-      <AppHeader title={campanha.name} />
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Link href="/campanhas" className="flex w-fit items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Voltar para campanhas
-          </Link>
+    <main className="flex-1 overflow-y-auto">
+      <header className="sticky top-0 z-20 border-b border-border bg-background/95 px-5 py-4 backdrop-blur lg:px-8">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Button asChild variant="ghost" size="sm" className="shrink-0 px-0 text-muted-foreground hover:text-foreground">
+              <Link href="/campanhas">
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </Link>
+            </Button>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                Dossiê de campanha
+              </p>
+              <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">{campanha.name}</h1>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href={`/campanhas/${id}/editar`}>
@@ -161,7 +166,9 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
             </ConfirmDialog>
           </div>
         </div>
+      </header>
 
+      <div className="px-5 py-6 lg:px-8">
         <div className="space-y-6">
           <CampaignHero campanha={campanha} />
 
@@ -242,8 +249,8 @@ export function CampanhaDetailPage({ id }: CampanhaDetailPageProps) {
             </aside>
           </section>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }
 
