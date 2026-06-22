@@ -55,8 +55,9 @@ export interface CenaMencao {
 export interface CenaBloco {
   tipo: CenaBlocoTipo;
   texto: string;
-  sujeito_id?: string | null; // quem fala (blocos de fala)
-  mencoes?: CenaMencao[]; // sujeitos mencionados no texto via @
+  sujeito_id?: string | null; // quem fala (sujeito cadastrado)
+  falante_nome?: string | null; // quem fala (avulso, sem ficha)
+  mencoes?: CenaMencao[]; // sujeitos mencionados no texto via @ (sujeito_id vazio = avulso)
 }
 
 export interface Cena {

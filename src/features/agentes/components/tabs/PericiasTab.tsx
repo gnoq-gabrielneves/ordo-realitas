@@ -50,14 +50,22 @@ export function PericiasTab({ data, onChange }: PericiasTabProps) {
   };
 
   return (
-    <div className="space-y-1">
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_60px_80px_60px_60px] gap-2 px-3 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+    <div className="space-y-4">
+      <div className="border border-border bg-muted/20 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Como testes funcionam</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          O atributo define quantos d20 você rola e você usa o maior resultado. O total numérico abaixo mostra apenas bônus fixos:
+          treinamento, modificadores e efeitos. Exemplo: AGI 2 vira 2d20; Treinado soma +5.
+        </p>
+      </div>
+
+      <div className="space-y-1">
+      <div className="grid grid-cols-[1fr_80px_90px_70px_80px] gap-2 px-3 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
         <span>Perícia</span>
-        <span className="text-center">Atrib.</span>
+        <span className="text-center">Rolagem</span>
         <span className="text-center">Grau</span>
         <span className="text-center">Outros</span>
-        <span className="text-center">Total</span>
+        <span className="text-center">Bônus</span>
       </div>
 
       {PERICIAS.map((p) => {
@@ -65,12 +73,13 @@ export function PericiasTab({ data, onChange }: PericiasTabProps) {
         const grau = getGrau(per);
         const base = atributos[p.atributo] ?? 0;
         const bonus = GRAUS[grau].bonus;
-        const total = base + bonus + (per.outros ?? 0);
+        const total = bonus + (per.outros ?? 0);
+        const dicePool = base > 0 ? `${base}d20` : "2d20 pior";
 
         return (
           <div
             key={p.key}
-            className="grid grid-cols-[1fr_60px_80px_60px_60px] gap-2 items-center px-3 py-1.5 rounded-sm hover:bg-muted/30 transition-colors"
+            className="grid grid-cols-[1fr_80px_90px_70px_80px] gap-2 items-center px-3 py-1.5 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-sm truncate">{p.nome}</span>
@@ -80,7 +89,7 @@ export function PericiasTab({ data, onChange }: PericiasTabProps) {
 
             <div className="text-center">
               <span className={cn("text-xs font-mono font-medium", ATRIB_COLORS[p.atributo])}>
-                {p.atributo}
+                {p.atributo} {dicePool}
               </span>
             </div>
 
@@ -121,8 +130,9 @@ export function PericiasTab({ data, onChange }: PericiasTabProps) {
       })}
 
       <p className="px-3 pt-2 text-[10px] text-muted-foreground">
-        * Somente treinada &nbsp; + Penalidade de carga &nbsp;·&nbsp; Graus: Leigo (+0) → Treinado (+5) → Veterano (+10) → Expert (+15)
+        * Somente treinada &nbsp; + Penalidade de carga &nbsp;·&nbsp; Atributo 0 rola dois d20 e usa o pior resultado.
       </p>
+      </div>
     </div>
   );
 }

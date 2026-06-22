@@ -5,6 +5,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { ELEMENTO_LABELS, ELEMENTO_TEXT } from "@/shared/constants/elements";
 import { CUSTO_PE, Ritual, RitualCirculo, RitualElemento, RitualPayload } from "@/shared/types/ritual";
 import { useState } from "react";
 
@@ -13,22 +14,6 @@ interface RitualFormProps {
   onSubmit: (payload: RitualPayload) => void;
   loading?: boolean;
 }
-
-const ELEMENTO_LABELS: Record<RitualElemento, string> = {
-  conhecimento: "Conhecimento",
-  energia: "Energia",
-  morte: "Morte",
-  sangue: "Sangue",
-  medo: "Medo",
-};
-
-const ELEMENTO_COLORS: Record<RitualElemento, string> = {
-  conhecimento: "text-blue-400",
-  energia: "text-yellow-400",
-  morte: "text-purple-400",
-  sangue: "text-red-400",
-  medo: "text-orange-400",
-};
 
 const empty: RitualPayload = {
   nome: "",
@@ -89,7 +74,7 @@ export function RitualForm({ initial, onSubmit, loading }: RitualFormProps) {
             <SelectContent position="popper">
               {(Object.entries(ELEMENTO_LABELS) as [RitualElemento, string][]).map(([k, label]) => (
                 <SelectItem key={k} value={k}>
-                  <span className={ELEMENTO_COLORS[k]}>{label}</span>
+                  <span className={ELEMENTO_TEXT[k]}>{label}</span>
                 </SelectItem>
               ))}
             </SelectContent>

@@ -10,9 +10,11 @@ interface ImageUploadProps {
   bucket: string;
   value: string | null;
   onChange: (url: string | null) => void;
+  className?: string;
+  label?: string;
 }
 
-export function ImageUpload({ bucket, value, onChange }: ImageUploadProps) {
+export function ImageUpload({ bucket, value, onChange, className = "h-32 w-32", label = "Imagem" }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,12 +72,13 @@ export function ImageUpload({ bucket, value, onChange }: ImageUploadProps) {
       />
 
       {value ? (
-        <div className="group relative h-32 w-32 border border-border overflow-hidden">
+        <div className={`group relative overflow-hidden border border-border ${className}`}>
           <Image
             src={value}
-            alt="Imagem do sujeito"
+            alt={label}
             fill
             className="object-cover"
+            unoptimized
           />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -101,14 +104,14 @@ export function ImageUpload({ bucket, value, onChange }: ImageUploadProps) {
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={loading}
-          className="flex h-32 w-32 flex-col items-center justify-center gap-2 border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+          className={`flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 ${className}`}
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
             <>
               <ImageIcon className="h-5 w-5" />
-              <span className="text-[10px] uppercase tracking-wider">Imagem</span>
+              <span className="text-[10px] uppercase tracking-wider">{label}</span>
             </>
           )}
         </button>

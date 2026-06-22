@@ -2,7 +2,7 @@
 
 import { Npc } from "@/shared/types/npc";
 import { cn } from "@/shared/lib/utils";
-import { UserRound } from "lucide-react";
+import { UserPlus, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface MentionTextareaProps {
@@ -10,6 +10,7 @@ interface MentionTextareaProps {
   onChange: (value: string) => void;
   sujeitos: Npc[];
   onMention?: (s: Npc) => void;
+  onMentionAvulso?: (nome: string) => void;
   placeholder?: string;
   rows?: number;
   className?: string;
@@ -19,7 +20,7 @@ interface MentionTextareaProps {
 const TRIGGER = /@([\p{L}\d]*)$/u;
 
 export function MentionTextarea({
-  value, onChange, sujeitos, onMention, placeholder, rows = 3, className,
+  value, onChange, sujeitos, onMention, onMentionAvulso, placeholder, rows = 3, className,
 }: MentionTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [query, setQuery] = useState<string | null>(null);
@@ -29,7 +30,11 @@ export function MentionTextarea({
   const matches = query !== null
     ? sujeitos.filter((s) => s.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
     : [];
-  const open = query !== null && matches.length > 0;
+  // Mostra opção de avulso quando há texto digitado após o @ e não bate exatamente com um sujeito.
+  const avulsoNome = query?.trim() ?? "";
+  const showAvulso = !!onMentionAvulso && avulsoNome.length > 0
+    && !sujeitos.some((s) => s.name.toLowerCase() === avulsoNome.toLowerCase());
+  const open = query !== null && (matches.length > 0 || showAvulso);
 
   function sync(el: HTMLTextAreaElement) {
     const pos = el.selectionStart ?? el.value.length;
@@ -40,28 +45,35 @@ export function MentionTextarea({
     setActive(0);
   }
 
-  function pick(s: Npc) {
+  function inserir(nome: string) {
     const el = ref.current;
     if (!el) return;
     const before = value.slice(0, caret);
     const m = before.match(TRIGGER);
     const start = m ? before.length - m[0].length : caret;
-    const next = `${value.slice(0, start)}@${s.name} ${value.slice(caret)}`;
+    const next = `${value.slice(0, start)}@${nome} ${value.slice(caret)}`;
     onChange(next);
-    onMention?.(s);
     setQuery(null);
-    const newCaret = start + s.name.length + 2;
+    const newCaret = start + nome.length + 2;
     requestAnimationFrame(() => {
       el.focus();
       el.setSelectionRange(newCaret, newCaret);
     });
   }
+  function pick(s: Npc) { inserir(s.name); onMention?.(s); }
+  function pickAvulso() { inserir(avulsoNome); onMentionAvulso?.(avulsoNome); }
+
+  const totalItens = matches.length + (showAvulso ? 1 : 0);
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (!open) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => (a + 1) % matches.length); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => (a - 1 + matches.length) % matches.length); }
-    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pick(matches[active]); }
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => (a + 1) % totalItens); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => (a - 1 + totalItens) % totalItens); }
+    else if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      if (active < matches.length) pick(matches[active]);
+      else if (showAvulso) pickAvulso();
+    }
     else if (e.key === "Escape") { setQuery(null); }
   }
 
@@ -109,6 +121,25 @@ export function MentionTextarea({
               </div>
             </button>
           ))}
+          {showAvulso && (
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); pickAvulso(); }}
+              onMouseEnter={() => setActive(matches.length)}
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors border-t border-border/60",
+                active === matches.length ? "bg-muted" : "hover:bg-muted/60",
+              )}
+            >
+              <div className="h-7 w-7 shrink-0 rounded-full border border-dashed border-border flex items-center justify-center">
+                <UserPlus className="h-3.5 w-3.5 text-muted-foreground/60" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm truncate">Avulso: <span className="font-medium">{avulsoNome}</span></p>
+                <p className="text-[10px] text-muted-foreground">Mencionar só pelo nome, sem ficha</p>
+              </div>
+            </button>
+          )}
         </div>
       )}
     </div>

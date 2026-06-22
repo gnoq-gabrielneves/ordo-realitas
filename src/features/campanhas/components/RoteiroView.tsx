@@ -64,7 +64,8 @@ export function RoteiroView({ roteiro, sujeitos }: { roteiro: CenaBloco[]; sujei
         const empty = !b.texto.trim();
         if (b.tipo === "fala") {
           const falante = b.sujeito_id ? byId[b.sujeito_id] : undefined;
-          const iniciais = (falante?.name ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+          const falanteNome = falante?.name ?? b.falante_nome ?? null;
+          const iniciais = (falanteNome ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
           return (
             <article key={i} className="grid gap-3 border border-border bg-background p-4 sm:grid-cols-[44px_1fr]">
               <div className="flex h-11 w-11 items-center justify-center border border-primary/25 bg-primary/5 text-primary">
@@ -86,6 +87,8 @@ export function RoteiroView({ roteiro, sujeitos }: { roteiro: CenaBloco[]; sujei
                     </span>
                     {falante ? (
                       <Link href={`/sujeitos/${falante.id}`} className="hover:text-primary">{falante.name}</Link>
+                    ) : falanteNome ? (
+                      <span>{falanteNome}</span>
                     ) : (
                       <span className="text-muted-foreground italic">Sem falante</span>
                     )}

@@ -75,6 +75,7 @@ export async function deleteMissao(id: string): Promise<void> {
 // ---- Handouts com imagem (para Apresentação) ----
 
 export interface HandoutComImagem {
+  campaign_id: string;
   mission_id: string;
   mission_titulo: string;
   campaign_name: string;
@@ -86,7 +87,7 @@ export interface HandoutComImagem {
 export async function getHandoutsComImagem(): Promise<HandoutComImagem[]> {
   const { data, error } = await supabase
     .from("missions")
-    .select("id, titulo, handouts, campaigns(name)");
+    .select("id, campaign_id, titulo, handouts, campaigns(name)");
   if (error) throw error;
 
   const result: HandoutComImagem[] = [];
@@ -94,6 +95,7 @@ export async function getHandoutsComImagem(): Promise<HandoutComImagem[]> {
     for (const h of mission.handouts ?? []) {
       if (h.image_url) {
         result.push({
+          campaign_id: mission.campaign_id,
           mission_id: mission.id,
           mission_titulo: mission.titulo,
           campaign_name: (mission.campaigns as unknown as { name: string } | null)?.name ?? "",

@@ -17,7 +17,7 @@ import { Trash2 } from "lucide-react";
 interface ConfirmDialogProps {
   title?: string;
   description?: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   disabled?: boolean;
   children: React.ReactNode;
   /** Ícone do cabeçalho. Padrão: lixeira. */

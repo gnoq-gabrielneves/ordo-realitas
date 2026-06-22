@@ -1,10 +1,11 @@
 import { PERICIAS } from "@/shared/constants/pericias";
 import { FORMA_SUPREMA } from "@/shared/constants/hexatombe";
-import { AgentFormaSuprema, AgentSheet } from "@/shared/types/agent";
+import { CLASS_RULES, ClassRule, ProficiencyKey, findOriginRule, getSkillEntryAsTrained } from "@/shared/constants/agentRules";
+import { AgentFormaSuprema, AgentPericiaEntry, AgentSheet } from "@/shared/types/agent";
 
 export type ClassePersonagem = "Combatente" | "Especialista" | "Ocultista" | "Sobrevivente";
 
-export const CLASSES: ClassePersonagem[] = ["Combatente", "Especialista", "Ocultista", "Sobrevivente"];
+export const CLASSES = Object.keys(CLASS_RULES) as ClassePersonagem[];
 
 // Aumenta os dados de cada termo "NdM" do dano em +X (mantém modificadores fixos).
 export function aumentarDadosDano(dano: string, extra: number): string {
@@ -46,6 +47,15 @@ export function deriveFormaSuprema(base: AgentSheet): AgentFormaSuprema {
   };
 }
 
+export function shouldDeriveFormaSuprema(base: AgentSheet): boolean {
+  const forma = base.forma_suprema;
+  if (!forma) return true;
+  if (forma.usa_pd !== base.usa_pd) return true;
+  if (forma.pv_max <= 0) return true;
+  if (base.usa_pd) return forma.pd_max <= 0 || forma.pe_max > 0 || forma.san_max > 0;
+  return forma.pe_max <= 0;
+}
+
 // Limite de PE por turno baseado no NEX (Tabela 1.2)
 // Para Sobrevivente: sempre 1, independente do estágio
 export function calcularLimitePE(nex: number, classe?: string | null): number {
@@ -58,6 +68,36 @@ export function calcularLimitePE(nex: number, classe?: string | null): number {
 // Força 0 → 2 espaços; Força 1+ → Força × 5
 export function calcularCargaMax(forca: number): number {
   return forca === 0 ? 2 : forca * 5;
+}
+
+export function getClassRule(classe?: string | null): ClassRule | null {
+  if (!classe || !(classe in CLASS_RULES)) return null;
+  return CLASS_RULES[classe as ClassePersonagem];
+}
+
+export function treinarPericias(
+  pericias: Record<string, AgentPericiaEntry>,
+  keys: string[],
+): Record<string, AgentPericiaEntry> {
+  const next = { ...pericias };
+  for (const key of keys) {
+    next[key] = getSkillEntryAsTrained(next[key]);
+  }
+  return next;
+}
+
+export function buildProficienciesPatch(keys: ProficiencyKey[]): Partial<AgentSheet> {
+  return {
+    prof_arma_simples: keys.includes("prof_arma_simples"),
+    prof_arma_tatica: keys.includes("prof_arma_tatica"),
+    prof_arma_pesada: keys.includes("prof_arma_pesada"),
+    prof_prot_leve: keys.includes("prof_prot_leve"),
+    prof_prot_pesada: keys.includes("prof_prot_pesada"),
+  };
+}
+
+export function getOriginSkillKeys(origem?: string | null): string[] {
+  return findOriginRule(origem)?.trainedSkills ?? [];
 }
 
 interface RecursosCalculados {

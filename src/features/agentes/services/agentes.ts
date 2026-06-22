@@ -4,10 +4,10 @@ import { AgentFormaSuprema, AgentSheet, AgentSheetPayload } from "@/shared/types
 
 const supabase = createClient();
 
-export function emptyFormaSuprema(): AgentFormaSuprema {
+export function emptyFormaSuprema(usaPd = false): AgentFormaSuprema {
   return {
     pv_max: 0, pv_atual: 0, pe_max: 0, pe_atual: 0, san_max: 0, san_atual: 0,
-    usa_pd: false, pd_max: 0, pd_atual: 0,
+    usa_pd: usaPd, pd_max: 0, pd_atual: 0,
     defesa_bonus: 0, defesa_equip: 0, deslocamento: "9m/6q",
     pericias: {}, ataques: [], habilidades: [], rituais: [],
   };
@@ -46,11 +46,11 @@ export async function getMyAgente(): Promise<AgentSheet | null> {
 export async function createAgente(payload: Partial<AgentSheetPayload>): Promise<AgentSheet> {
   const userId = await requireCurrentUserId(supabase);
   const defaults: Omit<AgentSheetPayload, "profile_id"> = {
-    nome: null, image_url: null, origem: null, classe: null, trilha: null, nex: 5,
+    nome: null, image_url: null, intent_image_url: null, origem: null, classe: null, trilha: null, nex: 5,
     tipo: "padrao", codinome: null, estigmas: [],
     forma_ativa: false, forma_suprema: null,
     desertor: false, desertor_acumulo: 0,
-    agi: 0, forca: 0, intelecto: 0, presenca: 0, vigor: 0,
+    agi: 1, forca: 1, intelecto: 1, presenca: 1, vigor: 1,
     pv_max: 0, pv_atual: 0, pe_max: 0, pe_atual: 0, san_max: 0, san_atual: 0,
     usa_pd: false, pd_max: 0, pd_atual: 0,
     pe_por_rodada: 1, deslocamento: "9m/6q",

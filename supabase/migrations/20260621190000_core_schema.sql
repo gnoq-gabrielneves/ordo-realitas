@@ -77,6 +77,7 @@ create table if not exists public.agent_sheets (
   user_id uuid not null references auth.users(id) on delete cascade,
   nome text,
   image_url text,
+  intent_image_url text,
   origem text,
   classe text,
   trilha text,
@@ -118,7 +119,7 @@ create table if not exists public.agent_sheets (
   habilidades jsonb not null default '[]'::jsonb,
   rituais jsonb not null default '[]'::jsonb,
   inventario jsonb not null default '[]'::jsonb,
-  limite_credito integer not null default 0,
+  limite_credito integer not null default 1,
   carga_max integer not null default 0,
   pontos_prestigio integer not null default 0,
   patente text,
@@ -227,6 +228,7 @@ create table if not exists public.rituals (
 create table if not exists public.presentation_state (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  campaign_id uuid references public.campaigns(id) on delete set null,
   mode text not null default 'placeholder',
   placeholder_url text,
   single_image_url text,
@@ -249,6 +251,7 @@ create index if not exists places_user_id_idx on public.places(user_id);
 create index if not exists items_user_id_idx on public.items(user_id);
 create index if not exists rituals_user_id_idx on public.rituals(user_id);
 create index if not exists presentation_state_user_id_idx on public.presentation_state(user_id);
+create index if not exists presentation_state_campaign_id_idx on public.presentation_state(campaign_id);
 
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at before update on public.profiles for each row execute function public.set_updated_at();

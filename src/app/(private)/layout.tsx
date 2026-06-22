@@ -5,7 +5,7 @@ import { QueryProvider } from "@/shared/providers/QueryProvider";
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-dvh overflow-hidden">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           {children}

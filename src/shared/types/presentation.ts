@@ -9,6 +9,7 @@ export interface CarouselImage {
 export interface PresentationState {
   id: string;
   user_id: string;
+  campaign_id: string | null;
   mode: PresentationMode;
   placeholder_url: string | null;
   single_image_url: string | null;
@@ -25,6 +26,7 @@ export interface PresentationState {
 export interface CarouselPreset {
   id: string;
   name: string;
+  campaign_id?: string | null;
   images: CarouselImage[];
   interval: number;
 }

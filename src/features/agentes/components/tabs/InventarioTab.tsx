@@ -7,7 +7,7 @@ import { useItens } from "@/features/itens/hooks/useItens";
 import { AgentInventarioItem, AgentSheet } from "@/shared/types/agent";
 import { Item } from "@/shared/types/item";
 import { cn } from "@/shared/lib/utils";
-import { Package, Plus, Search, Trash2, X } from "lucide-react";
+import { BookOpenCheck, Package, Plus, Search, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 interface InventarioTabProps {
@@ -59,7 +59,7 @@ function ItemStats({ item }: { item: Item }) {
   }
   if (item.descricao) {
     return (
-      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{item.descricao}</p>
+      <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{item.descricao}</p>
     );
   }
   return null;
@@ -117,25 +117,16 @@ export function InventarioTab({ data, onChange }: InventarioTabProps) {
     return true;
   });
 
-  // Group library items by subcategoria
-  const grouped = itensDisponiveis.reduce<Record<string, Item[]>>((acc, item) => {
-    const key = item.subcategoria ?? "outros";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
-
   return (
-    <div className="space-y-4">
-      {/* Carga */}
-      <div className="rounded-md bg-muted/30 px-4 py-3 space-y-2">
+    <div className="space-y-6">
+      <div className="space-y-2 border border-border bg-muted/20 p-4">
         <div className="flex items-center gap-2 text-sm">
-          <Package className="h-4 w-4 text-muted-foreground" />
-          <span className="text-muted-foreground flex-1">Carga</span>
+          <Package className="h-4 w-4 text-primary" />
+          <span className="flex-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Carga</span>
           <span className={cn("font-semibold tabular-nums", overloaded && "text-destructive")}>
             {totalEspacos}{cargaMax > 0 ? ` / ${cargaMax}` : ""} espaços
           </span>
-          {overloaded && <span className="text-[10px] text-destructive font-medium">SOBRECARREGADO</span>}
+          {overloaded && <span className="text-[10px] font-medium text-destructive">SOBRECARREGADO</span>}
         </div>
         {cargaMax > 0 && (
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -145,73 +136,41 @@ export function InventarioTab({ data, onChange }: InventarioTabProps) {
             />
           </div>
         )}
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          A carga máxima vem da Força. Proteções adicionadas aqui atualizam automaticamente o bônus de defesa da ficha.
+        </p>
       </div>
 
-      {/* Inventário atual */}
-      {inventario.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">Inventário vazio.</p>
-      ) : (
-        <div className="space-y-1">
-          {inventario.map((inv, idx) => {
-            const [cat, sub] = inv.categoria.split("·");
-            const full = allItens.find((x) => x.id === inv.item_id);
-            return (
-              <div key={idx} className="group flex items-start gap-2 rounded-sm border border-border px-3 py-2.5 hover:bg-muted/20 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium">{inv.nome}</span>
-                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 shrink-0", CATEGORIA_COLORS[cat])}>
-                      {CATEGORIA_LABELS[cat] ?? cat}
-                      {sub && ` · ${SUBCATEGORIA_LABELS[sub] ?? sub}`}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground">
-                      {inv.espacos} espaço{inv.espacos !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {full && <ItemStats item={full} />}
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
-                  onClick={() => removeItem(idx)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Biblioteca */}
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionar da Biblioteca</p>
-
-        {/* Busca + filtro categoria */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar item…"
-              className="pl-8 h-8 text-sm"
-            />
-            {busca && (
-              <button
-                type="button"
-                onClick={() => setBusca("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+      <section className="space-y-3 border border-border bg-muted/20 p-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <BookOpenCheck className="h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Biblioteca de itens</p>
           </div>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Adicione armas, proteções e equipamentos já catalogados. O card mostra custo de carga, crédito e regras principais.
+          </p>
         </div>
 
-        {/* Filtros */}
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar item, categoria, efeito ou descrição..."
+            className="h-10 pl-9"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         <div className="flex gap-1.5 flex-wrap">
           {(["todos", "arma", "protecao", "geral"] as FiltroCategoria[]).map((f) => (
             <button
@@ -219,7 +178,7 @@ export function InventarioTab({ data, onChange }: InventarioTabProps) {
               type="button"
               onClick={() => setFiltro(f)}
               className={cn(
-                "text-[11px] px-2.5 py-1 rounded-full border transition-colors font-medium",
+                "border px-2.5 py-1 text-[11px] font-medium transition-colors",
                 filtro === f
                   ? "bg-primary text-primary-foreground border-primary"
                   : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
@@ -230,57 +189,105 @@ export function InventarioTab({ data, onChange }: InventarioTabProps) {
           ))}
         </div>
 
-        {/* Lista agrupada */}
         {itensDisponiveis.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum item encontrado.</p>
+          <div className="border border-dashed border-border py-10 text-center">
+            <Package className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">Nenhum item encontrado.</p>
+          </div>
         ) : (
-          <div className="rounded-md border border-border overflow-hidden max-h-[28rem] overflow-y-auto">
-            {(busca || filtro !== "todos"
-              ? [{ sub: null, items: itensDisponiveis }]
-              : Object.entries(grouped).map(([sub, items]) => ({ sub, items }))
-            ).map(({ sub, items }) => (
-              <div key={sub ?? "all"}>
-                {sub && (
-                  <div className="px-3 py-1.5 bg-muted/40 border-b border-border/50 sticky top-0">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                      {SUBCATEGORIA_LABELS[sub] ?? sub}
-                    </span>
+          <div className="grid max-h-[28rem] gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
+            {itensDisponiveis.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => addItem(item)}
+                className="group border border-border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/[0.03]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold leading-tight">{item.nome}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      {item.espacos} espaço{item.espacos !== 1 ? "s" : ""} · {CREDITO_LABELS[item.credito_tier]}
+                    </p>
                   </div>
-                )}
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start gap-2 px-3 py-2.5 border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors group/item"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium">{item.nome}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {item.espacos} espaço{item.espacos !== 1 ? "s" : ""}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {CREDITO_LABELS[item.credito_tier]}
-                        </span>
-                      </div>
-                      <ItemStats item={item} />
+                  <span className="shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                    <Plus className="h-4 w-4" />
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <Badge variant="outline" className={cn("rounded-none px-1.5 py-0 text-[10px]", CATEGORIA_COLORS[item.categoria])}>
+                    {CATEGORIA_LABELS[item.categoria] ?? item.categoria}
+                  </Badge>
+                  {item.subcategoria && (
+                    <Badge variant="outline" className="rounded-none px-1.5 py-0 text-[10px]">
+                      {SUBCATEGORIA_LABELS[item.subcategoria] ?? item.subcategoria}
+                    </Badge>
+                  )}
+                </div>
+                <ItemStats item={item} />
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Package className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Itens na ficha</p>
+        </div>
+
+        {inventario.length === 0 ? (
+          <div className="flex flex-col items-center justify-center border border-dashed border-border py-12 text-center">
+            <Package className="mb-3 h-8 w-8 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">Inventário vazio. Use a biblioteca acima para começar.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {inventario.map((inv, idx) => {
+              const [cat, sub] = inv.categoria.split("·");
+              const full = allItens.find((x) => x.id === inv.item_id);
+              return (
+                <div key={idx} className="group border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/20">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold leading-tight">{inv.nome}</p>
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        {inv.espacos} espaço{inv.espacos !== 1 ? "s" : ""}
+                      </p>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-primary hover:text-primary shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity mt-0.5"
-                      onClick={() => addItem(item)}
-                      title="Adicionar ao inventário"
+                      className="h-8 w-8 shrink-0 text-destructive opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                      onClick={() => removeItem(idx)}
                     >
-                      <Plus className="h-3.5 w-3.5" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
-            ))}
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className={cn("rounded-none px-1.5 py-0 text-[10px]", CATEGORIA_COLORS[cat])}>
+                      {CATEGORIA_LABELS[cat] ?? cat}
+                    </Badge>
+                    {sub && (
+                      <Badge variant="outline" className="rounded-none px-1.5 py-0 text-[10px]">
+                        {SUBCATEGORIA_LABELS[sub] ?? sub}
+                      </Badge>
+                    )}
+                  </div>
+                  {full && <ItemStats item={full} />}
+                  {!full && (
+                    <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                      Item manual. Cadastre na biblioteca para exibir descrição, dano, proteção e outros detalhes.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

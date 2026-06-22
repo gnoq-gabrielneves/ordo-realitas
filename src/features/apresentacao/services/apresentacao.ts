@@ -19,6 +19,7 @@ export async function getMyPresentation(): Promise<PresentationState> {
     .from("presentation_state")
     .insert({
       user_id: uid,
+      campaign_id: null,
       mode: "placeholder",
       placeholder_url: null,
       single_image_url: null,

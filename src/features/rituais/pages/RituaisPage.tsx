@@ -6,26 +6,11 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { useDeleteRitual, useRituais } from "@/features/rituais/hooks/useRituais";
-import { CUSTO_PE, Ritual, RitualElemento } from "@/shared/types/ritual";
+import { ELEMENTO_BADGE, ELEMENTO_LABELS } from "@/shared/constants/elements";
+import { CUSTO_PE, Ritual } from "@/shared/types/ritual";
 import { Pencil, Plus, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
-const ELEMENTO_LABELS: Record<RitualElemento, string> = {
-  conhecimento: "Conhecimento",
-  energia: "Energia",
-  morte: "Morte",
-  sangue: "Sangue",
-  medo: "Medo",
-};
-
-const ELEMENTO_COLORS: Record<RitualElemento, string> = {
-  conhecimento: "border-blue-500/40 text-blue-400",
-  energia: "border-yellow-500/40 text-yellow-400",
-  morte: "border-purple-500/40 text-purple-400",
-  sangue: "border-red-500/40 text-red-400",
-  medo: "border-orange-500/40 text-orange-400",
-};
 
 const CIRCULO_LABEL: Record<number, string> = { 1: "1°", 2: "2°", 3: "3°", 4: "4°" };
 
@@ -39,7 +24,7 @@ function RitualRow({ ritual }: { ritual: Ritual }) {
           <span className="font-medium text-sm">{ritual.nome}</span>
           <Badge
             variant="outline"
-            className={`text-[10px] px-1.5 py-0 ${ELEMENTO_COLORS[ritual.elemento]}`}
+            className={`text-[10px] px-1.5 py-0 ${ELEMENTO_BADGE[ritual.elemento]}`}
           >
             {ELEMENTO_LABELS[ritual.elemento]}
           </Badge>

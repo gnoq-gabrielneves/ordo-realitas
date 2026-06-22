@@ -165,3 +165,30 @@ export const DESERTOR_REGRAS = {
     "A cada sacrifício: perde 1d10 PV máx/atual e sofre -1 em testes, cumulativo até -6d10 PV e -6 em testes.",
   acumuloMax: 6,
 } as const;
+
+export const HEXATOMBE_RULE_CARDS = [
+  {
+    titulo: "Digno de Sacrifício",
+    subtitulo: "Quem pode entrar na Hexatombe",
+    texto:
+      "Para ser sacrifício da Hexatombe, o personagem precisa ter carregado o Trono em algum momento, tornando-se portador do Diabo.",
+  },
+  {
+    titulo: "Poderes de Sacrifício",
+    subtitulo: "Um estigma, um poder",
+    texto:
+      "Cada estigma representa um desejo ou trauma explorado pela Coroa de Espinhos e adiciona seu poder correspondente à ficha.",
+  },
+  {
+    titulo: "Batalha de Intenções",
+    subtitulo: "Quando a obsessão vira confronto",
+    texto:
+      "Quando duas intenções entram em conflito direto, os lados envolvidos causam +1d10 de dano contra o alvo da intenção e reduzem pela metade danos vindos de fora desse conflito.",
+  },
+  {
+    titulo: "Trocas de Recursos",
+    subtitulo: "Informação e segredo",
+    texto:
+      "Em cenas de negociação, uma informação costuma custar 1 recurso. Um segredo relevante custa 3 recursos.",
+  },
+] as const;

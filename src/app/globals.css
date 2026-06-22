@@ -101,6 +101,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    height: 100%;
+    overflow: hidden;
     font-family: var(--font-app-sans);
     font-size: 14px;
     line-height: 1.45;
@@ -110,6 +112,8 @@
   }
   html {
     @apply font-sans;
+    height: 100%;
+    overflow: hidden;
   }
   h1,
   h2,

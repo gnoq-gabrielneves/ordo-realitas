@@ -6,7 +6,6 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Switch } from "@/shared/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Npc, NpcAcao, NpcAcaoTipo, NpcHabilidade, NpcPayload, NpcPericia, NpcResistencia, NpcRitual } from "@/shared/types/npc";
 import { PERICIAS } from "@/shared/constants/pericias";
@@ -14,7 +13,7 @@ import { useItens } from "@/features/itens/hooks/useItens";
 import { useRituais } from "@/features/rituais/hooks/useRituais";
 import { Item } from "@/shared/types/item";
 import { CUSTO_PE, Ritual } from "@/shared/types/ritual";
-import { Package, PlusIcon, Sparkles, Trash2 } from "lucide-react";
+import { BookOpenCheck, Eye, Heart, Package, PlusIcon, Shield, Sparkles, Swords, Trash2, UserRound } from "lucide-react";
 import { useState } from "react";
 
 // Perícias únicas por nome (Profissão aparece 2x no constant).
@@ -247,34 +246,23 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); onSubmit(form); }}
-      className="space-y-6"
+      className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]"
     >
-      <Tabs defaultValue="identificacao">
-        <TabsList className="mb-6">
-          <TabsTrigger value="identificacao">Identificação</TabsTrigger>
-          <TabsTrigger value="atributos">Atributos</TabsTrigger>
-          <TabsTrigger value="pericias">Perícias</TabsTrigger>
-          <TabsTrigger value="habilidades">Habilidades</TabsTrigger>
-          <TabsTrigger value="acoes">Ações</TabsTrigger>
-          <TabsTrigger value="rituais">Rituais</TabsTrigger>
-        </TabsList>
-
-        {/* --- IDENTIFICAÇÃO --- */}
-        <TabsContent value="identificacao" className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
+      <div className="space-y-6">
+        <EditorCard title="Identidade" icon={<UserRound className="h-4 w-4" />} description="Defina quem é o sujeito e como ele deve aparecer nos arquivos da mesa.">
+          <div className="grid gap-5 xl:grid-cols-[170px_minmax(0,1fr)]">
             <Field label="Imagem">
               <ImageUpload
                 bucket="sujeitos"
                 value={form.image_url}
                 onChange={(url) => set("image_url", url)}
+                className="aspect-square h-auto w-full"
               />
             </Field>
-
-            <Field label="Nome do Sujeito *">
-              <Input value={form.name} onChange={(e) => set("name", e.target.value)} required />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Nome do Sujeito *">
+                <Input value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Ex: Carniçal de Sangue" />
+              </Field>
               <Field label="Tipo">
                 <Select value={form.tipo ?? ""} onValueChange={(v) => set("tipo", v as NpcPayload["tipo"])}>
                   <SelectTrigger className="w-full"><SelectValue placeholder="Selecionar" /></SelectTrigger>
@@ -284,7 +272,6 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                   </SelectContent>
                 </Select>
               </Field>
-
               <Field label="Tamanho">
                 <Select value={form.tamanho ?? ""} onValueChange={(v) => set("tamanho", v as NpcPayload["tamanho"])}>
                   <SelectTrigger className="w-full"><SelectValue placeholder="Selecionar" /></SelectTrigger>
@@ -297,9 +284,6 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                   </SelectContent>
                 </Select>
               </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <Field label="VD">
                 <Input
                   type="number"
@@ -307,8 +291,7 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                   onChange={(e) => set("vd", numOrNull(e.target.value))}
                 />
               </Field>
-
-              <Field label="Origem Paranormal">
+              <Field label="Origem">
                 <Select value={form.origem ?? ""} onValueChange={(v) => set("origem", v as NpcPayload["origem"])}>
                   <SelectTrigger className="w-full"><SelectValue placeholder="Nenhuma (mundano)" /></SelectTrigger>
                   <SelectContent position="popper">
@@ -320,32 +303,36 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                   </SelectContent>
                 </Select>
               </Field>
+              <div className="md:col-span-3">
+                <Field label="Descrição / Aparência">
+                  <Textarea
+                    value={form.descricao ?? ""}
+                    onChange={(e) => set("descricao", e.target.value || null)}
+                    rows={3}
+                    placeholder="Como o sujeito aparece em cena, pistas visuais, comportamento..."
+                  />
+                </Field>
+              </div>
             </div>
-
-            <Field label="Descrição / Aparência">
-              <Textarea
-                value={form.descricao ?? ""}
-                onChange={(e) => set("descricao", e.target.value || null)}
-                rows={3}
-              />
-            </Field>
-
-            <Field label="Backstory">
-              <Textarea
-                value={form.backstory ?? ""}
-                onChange={(e) => set("backstory", e.target.value || null)}
-                rows={6}
-                placeholder="História, motivações, segredos..."
-              />
-            </Field>
           </div>
-        </TabsContent>
+        </EditorCard>
 
-        {/* --- ATRIBUTOS & COMBATE --- */}
-        <TabsContent value="atributos" className="space-y-6">
-          <section>
-            <SectionTitle>Sentidos</SectionTitle>
-            <div className="grid grid-cols-2 gap-4 mt-3">
+        <EditorCard title="Combate e atributos" icon={<Heart className="h-4 w-4" />} description="Valores usados em iniciativa, ataques, defesa e testes rápidos.">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div>
+              <SectionTitle>Defesa e vida</SectionTitle>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Field label="Defesa">
+                  <Input type="number" value={form.defesa ?? ""} onChange={(e) => set("defesa", numOrNull(e.target.value))} />
+                </Field>
+                <Field label="PV">
+                  <Input type="number" value={form.pv ?? ""} onChange={(e) => set("pv", numOrNull(e.target.value))} />
+                </Field>
+              </div>
+            </div>
+            <div>
+              <SectionTitle>Sentidos</SectionTitle>
+              <div className="mt-3 grid grid-cols-2 gap-3">
               <Field label="Percepção">
                 <Input value={form.percepcao ?? ""} onChange={(e) => set("percepcao", e.target.value || null)} placeholder="ex: 2O+10" />
               </Field>
@@ -360,11 +347,12 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
               />
               <Label className="text-xs text-muted-foreground">Percepção às Cegas</Label>
             </div>
-          </section>
+            </div>
+          </div>
 
-          <section>
+          <div className="mt-5">
             <SectionTitle>Atributos</SectionTitle>
-            <div className="grid grid-cols-5 gap-3 mt-3">
+            <div className="mt-3 grid grid-cols-5 gap-3">
               {(["agi", "atrib_for", "atrib_int", "pre", "vig"] as const).map((attr) => (
                 <Field key={attr} label={attrLabel(attr)}>
                   <Input
@@ -376,17 +364,11 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                 </Field>
               ))}
             </div>
-          </section>
+          </div>
 
-          <section>
-            <SectionTitle>Combate</SectionTitle>
-            <div className="grid grid-cols-2 gap-4 mt-3">
-              <Field label="Defesa">
-                <Input type="number" value={form.defesa ?? ""} onChange={(e) => set("defesa", numOrNull(e.target.value))} />
-              </Field>
-              <Field label="PV">
-                <Input type="number" value={form.pv ?? ""} onChange={(e) => set("pv", numOrNull(e.target.value))} />
-              </Field>
+          <div className="mt-5">
+            <SectionTitle>Resistências e movimento</SectionTitle>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
               <Field label="Fortitude">
                 <Input value={form.fortitude ?? ""} onChange={(e) => set("fortitude", e.target.value || null)} placeholder="ex: 3O+10" />
               </Field>
@@ -400,14 +382,13 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                 <Input value={form.deslocamento ?? ""} onChange={(e) => set("deslocamento", e.target.value || null)} placeholder="ex: 9m | 6" />
               </Field>
             </div>
-          </section>
+          </div>
 
-          {/* Presença Perturbadora — só para criaturas */}
           {form.tipo === "criatura" && (
-            <section>
+            <div className="mt-5 border border-purple-500/25 bg-purple-500/[0.04] p-4">
               <SectionTitle>Presença Perturbadora</SectionTitle>
-              <p className="text-xs text-muted-foreground mt-0.5 mb-3">Perda de Sanidade ao ver a criatura.</p>
-              <div className="grid grid-cols-3 gap-3">
+              <p className="mb-3 mt-0.5 text-xs text-muted-foreground">Perda de Sanidade ao ver a criatura.</p>
+              <div className="grid gap-3 md:grid-cols-3">
                 <Field label="DT">
                   <Input value={form.pp_dt ?? ""} onChange={(e) => set("pp_dt", e.target.value || null)} placeholder="ex: 20" />
                 </Field>
@@ -418,13 +399,19 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                   <Input value={form.pp_imune_nex ?? ""} onChange={(e) => set("pp_imune_nex", e.target.value || null)} placeholder="ex: 40%" />
                 </Field>
               </div>
-            </section>
+            </div>
           )}
-        </TabsContent>
+        </EditorCard>
 
-        {/* --- PERÍCIAS --- */}
-        <TabsContent value="pericias" className="space-y-6">
-          <section>
+        <EditorCard
+          title="Perícias e defesas especiais"
+          icon={<Shield className="h-4 w-4" />}
+          description="Use para testes, resistências a dano e vulnerabilidades importantes."
+          collapsible
+          defaultOpen={form.pericias.length > 0 || form.resistencias.length > 0 || form.vulnerabilidades.length > 0}
+          meta={`${form.pericias.length + form.resistencias.length + form.vulnerabilidades.length} itens`}
+        >
+          <div>
             <div className="flex items-center justify-between mb-3">
               <SectionTitle>Perícias</SectionTitle>
               <AddButton onClick={addPericia} />
@@ -446,9 +433,9 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
               ))}
               {form.pericias.length === 0 && <Empty>Nenhuma perícia adicionada.</Empty>}
             </div>
-          </section>
+          </div>
 
-          <section>
+          <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <SectionTitle>Resistências</SectionTitle>
               <AddButton onClick={addResistencia} />
@@ -463,9 +450,9 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
               ))}
               {form.resistencias.length === 0 && <Empty>Nenhuma resistência adicionada.</Empty>}
             </div>
-          </section>
+          </div>
 
-          <section>
+          <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <SectionTitle>Vulnerabilidades</SectionTitle>
               <AddButton onClick={addVulnerabilidade} />
@@ -479,40 +466,48 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
               ))}
               {form.vulnerabilidades.length === 0 && <Empty>Nenhuma vulnerabilidade adicionada.</Empty>}
             </div>
-          </section>
-        </TabsContent>
+          </div>
+        </EditorCard>
 
-        {/* --- HABILIDADES --- */}
-        <TabsContent value="habilidades">
+        <EditorCard
+          title="Habilidades especiais"
+          icon={<Sparkles className="h-4 w-4" />}
+          description="Poderes, auras, reações e efeitos especiais do sujeito."
+          collapsible
+          defaultOpen={form.habilidades.length > 0}
+          meta={pluralize(form.habilidades.length, "habilidade", "habilidades")}
+        >
           <div className="flex items-center justify-between mb-3">
             <SectionTitle>Habilidades Especiais</SectionTitle>
             <AddButton onClick={addHabilidade} />
           </div>
           <div className="space-y-4">
             {form.habilidades.map((h, i) => (
-              <div key={i} className="border border-border p-3 space-y-2">
-                <div className="flex gap-2 items-center">
-                  <Input placeholder="Nome da habilidade" value={h.nome} onChange={(e) => updateHabilidade(i, "nome", e.target.value)} />
+              <div key={i} className="space-y-3 border border-border bg-background p-4">
+                <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_180px_36px] lg:items-center">
+                  <Input placeholder="Nome da habilidade" value={h.nome} onChange={(e) => updateHabilidade(i, "nome", e.target.value)} className="min-w-0" />
                   <Select value={h.acao || "__none__"} onValueChange={(v) => updateHabilidade(i, "acao", v === "__none__" ? "" : v)}>
-                    <SelectTrigger className="w-40 shrink-0"><SelectValue placeholder="Ação" /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Ação" /></SelectTrigger>
                     <SelectContent position="popper">
                       <SelectItem value="__none__" className="text-muted-foreground">— sem ação —</SelectItem>
                       {ACOES_HABILIDADE.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <RemoveButton onClick={() => removeHabilidade(i)} />
+                  <div className="flex justify-end">
+                    <RemoveButton onClick={() => removeHabilidade(i)} />
+                  </div>
                 </div>
                 <Textarea placeholder="Descrição" rows={2} value={h.descricao} onChange={(e) => updateHabilidade(i, "descricao", e.target.value)} />
-                <div className="flex gap-2 items-center">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">Evita com</span>
+                <div className="grid gap-2 lg:grid-cols-[90px_minmax(0,1fr)_170px] lg:items-center">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Evita com</span>
                   <Select value={h.resistencia || "__none__"} onValueChange={(v) => updateHabilidade(i, "resistencia", v === "__none__" ? "" : v)}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Teste / perícia" /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Teste / perícia" /></SelectTrigger>
                     <SelectContent position="popper">
                       <SelectItem value="__none__" className="text-muted-foreground">— nenhum —</SelectItem>
                       {TESTES_RESISTENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Input placeholder="DT (ex: 20)" value={h.resistencia_dt ?? ""} onChange={(e) => updateHabilidade(i, "resistencia_dt", e.target.value)} className="w-32 shrink-0" />
+                  <Input placeholder="DT (ex: 20)" value={h.resistencia_dt ?? ""} onChange={(e) => updateHabilidade(i, "resistencia_dt", e.target.value)} />
                 </div>
 
                 {/* Desfechos / opções condicionais */}
@@ -539,10 +534,16 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
             ))}
             {form.habilidades.length === 0 && <Empty>Nenhuma habilidade adicionada.</Empty>}
           </div>
-        </TabsContent>
+        </EditorCard>
 
-        {/* --- AÇÕES --- */}
-        <TabsContent value="acoes">
+        <EditorCard
+          title="Ações"
+          icon={<Swords className="h-4 w-4" />}
+          description="Ataques e ações prontas para usar em cena. Você pode puxar armas cadastradas em Itens."
+          collapsible
+          defaultOpen={form.acoes.length > 0}
+          meta={pluralize(form.acoes.length, "ação", "ações")}
+        >
           <div className="flex items-center justify-between mb-3 gap-2">
             <SectionTitle>Ações</SectionTitle>
             <div className="flex items-center gap-2">
@@ -603,10 +604,16 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
             ))}
             {form.acoes.length === 0 && <Empty>Nenhuma ação adicionada.</Empty>}
           </div>
-        </TabsContent>
+        </EditorCard>
 
-        {/* --- RITUAIS --- */}
-        <TabsContent value="rituais">
+        <EditorCard
+          title="Rituais"
+          icon={<Sparkles className="h-4 w-4" />}
+          description="Rituais conhecidos ou efeitos paranormais que funcionam como ritual."
+          collapsible
+          defaultOpen={form.rituais.length > 0}
+          meta={pluralize(form.rituais.length, "ritual", "rituais")}
+        >
           <div className="flex items-center justify-between mb-3 gap-2">
             <SectionTitle>Rituais</SectionTitle>
             <div className="flex items-center gap-2">
@@ -654,14 +661,52 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
             ))}
             {form.rituais.length === 0 && <Empty>Nenhum ritual adicionado.</Empty>}
           </div>
-        </TabsContent>
-      </Tabs>
+        </EditorCard>
 
-      <div className="flex justify-end gap-2 border-t border-border pt-4">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Salvando..." : initial ? "Salvar Alterações" : "Registrar Sujeito"}
-        </Button>
+        <EditorCard
+          title="Dossiê narrativo"
+          icon={<BookOpenCheck className="h-4 w-4" />}
+          description="História, motivações, segredos e anotações do mestre."
+          collapsible
+          defaultOpen={!!form.backstory}
+          meta={form.backstory ? "com notas" : "opcional"}
+        >
+          <Field label="Backstory">
+            <Textarea
+              value={form.backstory ?? ""}
+              onChange={(e) => set("backstory", e.target.value || null)}
+              rows={7}
+              placeholder="História, motivações, segredos..."
+            />
+          </Field>
+        </EditorCard>
       </div>
+
+      <aside className="space-y-4">
+        <div className="sticky top-6 space-y-4">
+          <EditorCard title="Resumo" icon={<Eye className="h-4 w-4" />}>
+            <div className="space-y-3">
+              <Summary label="Nome" value={form.name || "Sem nome"} />
+              <Summary label="Tipo" value={form.tipo ?? "Não definido"} />
+              <Summary label="VD" value={form.vd ?? "—"} danger={form.vd != null} />
+              <Summary label="Defesa" value={form.defesa ?? "—"} />
+              <Summary label="PV" value={form.pv ?? "—"} />
+              <Summary label="Ações" value={form.acoes.length} />
+              <Summary label="Rituais" value={form.rituais.length} />
+            </div>
+          </EditorCard>
+
+          <div className="border border-primary/30 bg-primary/[0.04] p-4">
+            <p className="text-sm font-semibold">{initial ? "Alterar registro" : "Novo registro"}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Salve para atualizar o arquivo usado na listagem e no dossiê do sujeito.
+            </p>
+            <Button type="submit" className="mt-3 w-full" disabled={isLoading}>
+              {isLoading ? "Salvando..." : initial ? "Salvar alterações" : "Registrar sujeito"}
+            </Button>
+          </div>
+        </div>
+      </aside>
     </form>
   );
 }
@@ -671,6 +716,68 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground uppercase tracking-wider">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function EditorCard({
+  title,
+  description,
+  icon,
+  children,
+  collapsible,
+  defaultOpen = true,
+  meta,
+}: {
+  title: string;
+  description?: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+  meta?: string;
+}) {
+  if (collapsible) {
+    return (
+      <details className="group border border-border bg-card" open={defaultOpen}>
+        <summary className="flex cursor-pointer list-none items-start justify-between gap-4 border-b border-border px-5 py-4 transition-colors hover:bg-muted/20 [&::-webkit-details-marker]:hidden">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-primary">{icon}</span>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">{title}</h2>
+            </div>
+            {description && <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {meta && <span className="border border-border bg-background px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{meta}</span>}
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary group-open:hidden">Abrir</span>
+            <span className="hidden text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground group-open:inline">Fechar</span>
+          </div>
+        </summary>
+        <div className="p-5">{children}</div>
+      </details>
+    );
+  }
+
+  return (
+    <section className="border border-border bg-card">
+      <div className="border-b border-border px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span className="text-primary">{icon}</span>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">{title}</h2>
+        </div>
+        {description && <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>}
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function Summary({ label, value, danger }: { label: string; value: React.ReactNode; danger?: boolean }) {
+  return (
+    <div className="border border-border bg-background p-3">
+      <p className={danger ? "text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-500" : "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"}>{label}</p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
     </div>
   );
 }
@@ -690,7 +797,7 @@ function AddButton({ onClick }: { onClick: () => void }) {
 
 function RemoveButton({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
+    <button type="button" onClick={onClick} className="grid h-9 w-9 shrink-0 place-items-center border border-transparent text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive">
       <Trash2 className="h-4 w-4" />
     </button>
   );
@@ -705,4 +812,8 @@ function attrLabel(attr: string) {
     agi: "AGI", atrib_for: "FOR", atrib_int: "INT", pre: "PRE", vig: "VIG",
   };
   return map[attr] ?? attr;
+}
+
+function pluralize(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`;
 }

@@ -3,6 +3,7 @@
 
 insert into public.presentation_state (
   user_id,
+  campaign_id,
   mode,
   placeholder_url,
   single_image_url,
@@ -16,6 +17,7 @@ insert into public.presentation_state (
 )
 select
   auth.uid(),
+  null,
   'placeholder',
   null,
   null,

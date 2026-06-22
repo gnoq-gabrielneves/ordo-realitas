@@ -168,6 +168,7 @@ Campos usados:
 
 - `id`
 - `user_id`
+- `campaign_id`
 - `mode`
 - `placeholder_url`
 - `single_image_url`

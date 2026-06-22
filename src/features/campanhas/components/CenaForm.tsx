@@ -80,7 +80,17 @@ export function CenaForm({ missionId, defaultValues, onSubmit, isPending }: Cena
     const patch: Partial<CenaBloco> = {
       mencoes: jaTem ? mencoes : [...mencoes, { nome: s.name, sujeito_id: s.id }],
     };
-    if (b.tipo === "fala" && !b.sujeito_id) patch.sujeito_id = s.id;
+    if (b.tipo === "fala" && !b.sujeito_id && !b.falante_nome) patch.sujeito_id = s.id;
+    updateBloco(i, patch);
+  }
+  function onMentionAvulso(i: number, nome: string) {
+    const b = form.roteiro[i];
+    const mencoes = b.mencoes ?? [];
+    const jaTem = mencoes.some((m) => m.nome === nome && m.sujeito_id === "");
+    const patch: Partial<CenaBloco> = {
+      mencoes: jaTem ? mencoes : [...mencoes, { nome, sujeito_id: "" }],
+    };
+    if (b.tipo === "fala" && !b.sujeito_id && !b.falante_nome) patch.falante_nome = nome;
     updateBloco(i, patch);
   }
 
@@ -202,17 +212,18 @@ export function CenaForm({ missionId, defaultValues, onSubmit, isPending }: Cena
                           {b.tipo === "fala" ? "Fala" : "Narração"}
                         </span>
                         {b.tipo === "fala" && (
-                          falante ? (
+                          falante || b.falante_nome ? (
                             <span className="flex items-center gap-1.5 text-xs">
                               <span className="flex h-6 w-6 items-center justify-center overflow-hidden border border-border bg-muted">
-                                {falante.image_url ? (
+                                {falante?.image_url ? (
                                   <Image src={falante.image_url} alt="" width={24} height={24} className="h-full w-full object-cover" unoptimized />
                                 ) : (
                                   <UserRound className="h-3 w-3 text-muted-foreground/50" />
                                 )}
                               </span>
-                              <span className="font-medium">{falante.name}</span>
-                              <button type="button" onClick={() => updateBloco(i, { sujeito_id: null })} className="text-muted-foreground hover:text-destructive">
+                              <span className="font-medium">{falante?.name ?? b.falante_nome}</span>
+                              {!falante && <span className="text-[10px] text-muted-foreground">(avulso)</span>}
+                              <button type="button" onClick={() => updateBloco(i, { sujeito_id: null, falante_nome: null })} className="text-muted-foreground hover:text-destructive">
                                 <X className="h-3 w-3" />
                               </button>
                             </span>
@@ -230,6 +241,7 @@ export function CenaForm({ missionId, defaultValues, onSubmit, isPending }: Cena
                         value={b.texto}
                         onChange={(v) => updateBloco(i, { texto: v })}
                         onMention={(s) => onMention(i, s)}
+                        onMentionAvulso={(nome) => onMentionAvulso(i, nome)}
                         sujeitos={sujeitos}
                         rows={b.tipo === "fala" ? 2 : 3}
                         placeholder={b.tipo === "fala" ? "A fala do personagem... (@ menciona)" : "O que acontece / descrição... (@ menciona)"}

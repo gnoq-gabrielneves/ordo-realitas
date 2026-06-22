@@ -67,6 +67,7 @@ export interface AgentSheet {
   user_id: string;
   nome: string | null;
   image_url: string | null;
+  intent_image_url: string | null;
   origem: string | null;
   classe: string | null;
   trilha: string | null;
