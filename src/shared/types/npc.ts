@@ -78,6 +78,7 @@ export interface Npc {
   pp_dt: string | null; // DT do teste (ex: "20")
   pp_dano: string | null; // dano de Sanidade (ex: "3d8 mental")
   pp_imune_nex: string | null; // NEX que fica imune (ex: "40%")
+  enigma_medo: string | null;
   pericias: NpcPericia[];
   resistencias: NpcResistencia[];
   vulnerabilidades: string[];

@@ -160,6 +160,7 @@ create table if not exists public.npcs (
   pp_dt text,
   pp_dano text,
   pp_imune_nex text,
+  enigma_medo text,
   pericias jsonb not null default '[]'::jsonb,
   resistencias jsonb not null default '[]'::jsonb,
   vulnerabilidades jsonb not null default '[]'::jsonb,

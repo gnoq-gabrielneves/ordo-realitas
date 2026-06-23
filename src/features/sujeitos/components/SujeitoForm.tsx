@@ -1,6 +1,7 @@
 "use client";
 
 import { ImageUpload } from "@/shared/components/ImageUpload/ImageUpload";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -12,9 +13,11 @@ import { PERICIAS } from "@/shared/constants/pericias";
 import { useItens } from "@/features/itens/hooks/useItens";
 import { useRituais } from "@/features/rituais/hooks/useRituais";
 import { Item } from "@/shared/types/item";
-import { CUSTO_PE, Ritual } from "@/shared/types/ritual";
-import { BookOpenCheck, Eye, Heart, Package, PlusIcon, Shield, Sparkles, Swords, Trash2, UserRound } from "lucide-react";
-import { useState } from "react";
+import { ELEMENTO_BADGE, ELEMENTO_BG, ELEMENTO_LABELS, ELEMENTOS } from "@/shared/constants/elements";
+import { CUSTO_PE, Ritual, RitualCirculo, RitualElemento } from "@/shared/types/ritual";
+import { cn } from "@/shared/lib/utils";
+import { BookOpenCheck, CheckCircle2, Eye, Heart, Package, PlusIcon, Search, Shield, Sparkles, Swords, Trash2, UserRound, X } from "lucide-react";
+import { useRef, useState } from "react";
 
 // Perícias únicas por nome (Profissão aparece 2x no constant).
 const PERICIAS_UNICAS = PERICIAS.filter(
@@ -22,6 +25,7 @@ const PERICIAS_UNICAS = PERICIAS.filter(
 );
 
 const ACOES_HABILIDADE = ["Passiva", "Livre", "Reação", "Movimento", "Padrão", "Completa"];
+const CIRCULOS: RitualCirculo[] = [1, 2, 3, 4];
 
 // Testes que podem evitar uma habilidade: resistências + perícias (sem duplicar).
 const TESTES_RESISTENCIA = Array.from(
@@ -38,6 +42,30 @@ function acaoFromItem(item: Item): NpcAcao {
     teste: limpa(item.teste),
     dano: limpa(item.dano),
     critico: limpa(item.critico),
+  };
+}
+
+function parseDescricaoRitual(descricao: string) {
+  return descricao.split(/(?=↑\s)/)[0].trim();
+}
+
+function ritualFromBiblioteca(r: Ritual): NpcRitual {
+  const detalhes = [
+    r.execucao && `Execução: ${r.execucao}`,
+    r.alcance && `Alcance: ${r.alcance}`,
+    r.alvo && `Alvo: ${r.alvo}`,
+    r.area && `Área: ${r.area}`,
+    r.duracao && `Duração: ${r.duracao}`,
+    r.resistencia && r.resistencia !== "—" && `Resistência: ${r.resistencia}`,
+  ].filter(Boolean).join(" · ");
+
+  return {
+    nome: r.nome,
+    elemento: ELEMENTO_LABELS[r.elemento],
+    grau: `${r.circulo}° Círculo`,
+    dt: r.dt != null ? String(r.dt) : "",
+    custo_pe: r.custo_pe ?? CUSTO_PE[r.circulo],
+    descricao: [detalhes, r.descricao].filter(Boolean).join("\n\n"),
   };
 }
 
@@ -68,6 +96,7 @@ const EMPTY_PAYLOAD: NpcPayload = {
   pp_dt: null,
   pp_dano: null,
   pp_imune_nex: null,
+  enigma_medo: null,
   pericias: [],
   resistencias: [],
   vulnerabilidades: [],
@@ -86,6 +115,12 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
   const { data: itens = [] } = useItens();
   const armas = itens.filter((it) => it.categoria === "arma");
   const { data: rituaisBiblioteca = [] } = useRituais();
+  const [buscaAcao, setBuscaAcao] = useState("");
+  const [buscaRitual, setBuscaRitual] = useState("");
+  const [filtroElemento, setFiltroElemento] = useState<RitualElemento | "todos">("todos");
+  const [filtroCirculo, setFiltroCirculo] = useState<RitualCirculo | "todos">("todos");
+  const [ritualAdicionado, setRitualAdicionado] = useState<string | null>(null);
+  const ritualFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [form, setForm] = useState<NpcPayload>(
     initial ? {
       name: initial.name,
@@ -114,6 +149,7 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
       pp_dt: initial.pp_dt,
       pp_dano: initial.pp_dano,
       pp_imune_nex: initial.pp_imune_nex,
+      enigma_medo: initial.enigma_medo,
       pericias: initial.pericias,
       resistencias: initial.resistencias,
       vulnerabilidades: initial.vulnerabilidades,
@@ -184,9 +220,8 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
   function addAcao() {
     set("acoes", [...form.acoes, { tipo: "padrao", nome: "", descricao: "" }]);
   }
-  function addAcaoFromItem(itemId: string) {
-    const item = armas.find((it) => it.id === itemId);
-    if (item) set("acoes", [...form.acoes, acaoFromItem(item)]);
+  function addAcaoItem(item: Item) {
+    set("acoes", [...form.acoes, acaoFromItem(item)]);
   }
   function updateAcao(i: number, field: keyof NpcAcao, v: string) {
     const arr = [...form.acoes];
@@ -217,14 +252,10 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
   function addRitualFromBiblioteca(ritualId: string) {
     const r = rituaisBiblioteca.find((x: Ritual) => x.id === ritualId);
     if (!r) return;
-    set("rituais", [...form.rituais, {
-      nome: r.nome,
-      elemento: r.elemento.toUpperCase(),
-      grau: `${r.circulo}° Círculo`,
-      dt: r.dt != null ? String(r.dt) : "",
-      custo_pe: CUSTO_PE[r.circulo as 1 | 2 | 3 | 4],
-      descricao: r.descricao ?? "",
-    }]);
+    set("rituais", [...form.rituais, ritualFromBiblioteca(r)]);
+    setRitualAdicionado(ritualId);
+    if (ritualFeedbackTimer.current) clearTimeout(ritualFeedbackTimer.current);
+    ritualFeedbackTimer.current = setTimeout(() => setRitualAdicionado(null), 2600);
   }
   function updateRitual(i: number, field: keyof NpcRitual, v: string) {
     const arr = [...form.rituais];
@@ -242,6 +273,21 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
     completa: "Completa",
     reacao: "Reação",
   };
+
+  const armasFiltradas = armas.filter((item) => {
+    if (!buscaAcao.trim()) return true;
+    const q = buscaAcao.toLowerCase();
+    return [item.nome, item.dano, item.teste, item.especial].some((value) => (value ?? "").toLowerCase().includes(q));
+  });
+
+  const rituaisFiltrados = rituaisBiblioteca
+    .filter((r: Ritual) => filtroElemento === "todos" || r.elemento === filtroElemento)
+    .filter((r: Ritual) => filtroCirculo === "todos" || r.circulo === filtroCirculo)
+    .filter((r: Ritual) => {
+      if (!buscaRitual.trim()) return true;
+      const q = buscaRitual.toLowerCase();
+      return [r.nome, r.descricao, r.alvo, r.area, r.resistencia].some((value) => (value ?? "").toLowerCase().includes(q));
+    });
 
   return (
     <form
@@ -385,19 +431,32 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
           </div>
 
           {form.tipo === "criatura" && (
-            <div className="mt-5 border border-purple-500/25 bg-purple-500/[0.04] p-4">
-              <SectionTitle>Presença Perturbadora</SectionTitle>
-              <p className="mb-3 mt-0.5 text-xs text-muted-foreground">Perda de Sanidade ao ver a criatura.</p>
-              <div className="grid gap-3 md:grid-cols-3">
-                <Field label="DT">
-                  <Input value={form.pp_dt ?? ""} onChange={(e) => set("pp_dt", e.target.value || null)} placeholder="ex: 20" />
-                </Field>
-                <Field label="Dano">
-                  <Input value={form.pp_dano ?? ""} onChange={(e) => set("pp_dano", e.target.value || null)} placeholder="ex: 3d8 mental" />
-                </Field>
-                <Field label="Imune a partir de (NEX)">
-                  <Input value={form.pp_imune_nex ?? ""} onChange={(e) => set("pp_imune_nex", e.target.value || null)} placeholder="ex: 40%" />
-                </Field>
+            <div className="mt-5 space-y-4">
+              <div className="border border-purple-500/25 bg-purple-500/[0.04] p-4">
+                <SectionTitle>Presença Perturbadora</SectionTitle>
+                <p className="mb-3 mt-0.5 text-xs text-muted-foreground">Perda de Sanidade ao ver a criatura.</p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Field label="DT">
+                    <Input value={form.pp_dt ?? ""} onChange={(e) => set("pp_dt", e.target.value || null)} placeholder="ex: 20" />
+                  </Field>
+                  <Field label="Dano">
+                    <Input value={form.pp_dano ?? ""} onChange={(e) => set("pp_dano", e.target.value || null)} placeholder="ex: 3d8 mental" />
+                  </Field>
+                  <Field label="Imune a partir de (NEX)">
+                    <Input value={form.pp_imune_nex ?? ""} onChange={(e) => set("pp_imune_nex", e.target.value || null)} placeholder="ex: 40%" />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="border border-foreground/15 bg-foreground/[0.03] p-4">
+                <SectionTitle>Enigma do Medo</SectionTitle>
+                <p className="mb-3 mt-0.5 text-xs text-muted-foreground">Condição, segredo ou método necessário para entender ou enfrentar a criatura.</p>
+                <Textarea
+                  value={form.enigma_medo ?? ""}
+                  onChange={(e) => set("enigma_medo", e.target.value || null)}
+                  rows={4}
+                  placeholder="Ex: só pode ser ferida depois que alguém descobre o nome verdadeiro..."
+                />
               </div>
             </div>
           )}
@@ -546,25 +605,52 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
         >
           <div className="flex items-center justify-between mb-3 gap-2">
             <SectionTitle>Ações</SectionTitle>
-            <div className="flex items-center gap-2">
-              {armas.length > 0 && (
-                <Select value="" onValueChange={addAcaoFromItem}>
-                  <SelectTrigger className="w-auto h-8 text-xs gap-1.5">
-                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                    <SelectValue placeholder="Puxar de um item" />
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    {armas.map((it) => (
-                      <SelectItem key={it.id} value={it.id}>
-                        {it.nome}{it.dano ? <span className="text-muted-foreground"> · {it.dano}</span> : null}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <AddButton onClick={addAcao} />
-            </div>
+            <AddButton onClick={addAcao} />
           </div>
+          {armas.length > 0 && (
+            <div className="mb-5 space-y-3 border border-border bg-muted/20 p-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-primary" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Armas da biblioteca</p>
+              </div>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={buscaAcao}
+                  onChange={(e) => setBuscaAcao(e.target.value)}
+                  placeholder="Buscar arma, dano, teste ou efeito..."
+                  className="h-10 pl-9"
+                />
+                {buscaAcao && (
+                  <button type="button" onClick={() => setBuscaAcao("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="grid max-h-64 gap-2 overflow-y-auto pr-1 md:grid-cols-2">
+                {armasFiltradas.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => addAcaoItem(item)}
+                    className="group border border-border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/[0.03]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{item.nome}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {[item.dano, item.teste, item.critico].filter(Boolean).join(" · ") || "Adicionar como ação"}
+                        </p>
+                      </div>
+                      <PlusIcon className="h-4 w-4 shrink-0 text-primary opacity-60 transition-opacity group-hover:opacity-100" />
+                    </div>
+                    {item.especial && <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{item.especial}</p>}
+                  </button>
+                ))}
+              </div>
+              {armasFiltradas.length === 0 && <Empty>Nenhuma arma encontrada.</Empty>}
+            </div>
+          )}
           <div className="space-y-4">
             {form.acoes.map((a, i) => (
               <div key={i} className="border border-border p-3 space-y-3">
@@ -616,25 +702,107 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
         >
           <div className="flex items-center justify-between mb-3 gap-2">
             <SectionTitle>Rituais</SectionTitle>
-            <div className="flex items-center gap-2">
-              {rituaisBiblioteca.length > 0 && (
-                <Select value="" onValueChange={addRitualFromBiblioteca}>
-                  <SelectTrigger className="w-auto h-8 text-xs gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                    <SelectValue placeholder="Puxar da biblioteca" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-72">
-                    {rituaisBiblioteca.map((r: Ritual) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.nome}<span className="text-muted-foreground"> · {r.circulo}° · {r.elemento}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <AddButton onClick={addRitual} />
-            </div>
+            <AddButton onClick={addRitual} />
           </div>
+          {rituaisBiblioteca.length > 0 && (
+            <div className="mb-5 space-y-3 border border-border bg-muted/20 p-4">
+              <div className="flex items-center gap-2">
+                <BookOpenCheck className="h-4 w-4 text-primary" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Biblioteca de rituais</p>
+                {ritualAdicionado && (
+                  <span className="inline-flex items-center gap-1 border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary" aria-live="polite">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Adicionado
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={buscaRitual}
+                  onChange={(e) => setBuscaRitual(e.target.value)}
+                  placeholder="Buscar ritual, efeito, alvo ou resistência..."
+                  className="h-10 pl-9"
+                />
+                {buscaRitual && (
+                  <button type="button" onClick={() => setBuscaRitual("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterButton active={filtroElemento === "todos"} onClick={() => setFiltroElemento("todos")}>
+                  Todos
+                </FilterButton>
+                {ELEMENTOS.map((elemento) => (
+                  <FilterButton
+                    key={elemento}
+                    active={filtroElemento === elemento}
+                    className={filtroElemento === elemento ? `${ELEMENTO_BG[elemento]} ${ELEMENTO_BADGE[elemento]} border-current` : undefined}
+                    onClick={() => setFiltroElemento(filtroElemento === elemento ? "todos" : elemento)}
+                  >
+                    {ELEMENTO_LABELS[elemento]}
+                  </FilterButton>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterButton active={filtroCirculo === "todos"} onClick={() => setFiltroCirculo("todos")}>
+                  Todos os círculos
+                </FilterButton>
+                {CIRCULOS.map((circulo) => (
+                  <FilterButton key={circulo} active={filtroCirculo === circulo} onClick={() => setFiltroCirculo(filtroCirculo === circulo ? "todos" : circulo)}>
+                    {circulo}° Círculo
+                  </FilterButton>
+                ))}
+              </div>
+              {rituaisFiltrados.length === 0 ? (
+                <Empty>Nenhum ritual encontrado.</Empty>
+              ) : (
+                <div className="grid max-h-[28rem] gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
+                  {rituaisFiltrados.map((ritual: Ritual) => {
+                    const foiAdicionado = ritualAdicionado === ritual.id;
+                    return (
+                      <button
+                        key={ritual.id}
+                        type="button"
+                        onClick={() => addRitualFromBiblioteca(ritual.id)}
+                        className={cn(
+                          "group border bg-background p-3 text-left transition-colors hover:border-primary/50 hover:bg-primary/[0.03]",
+                          foiAdicionado ? "border-primary bg-primary/[0.08] ring-1 ring-primary/30" : "border-border",
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold leading-tight">{ritual.nome}</p>
+                            <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                              {ritual.circulo}° Círculo · {(ritual.custo_pe ?? CUSTO_PE[ritual.circulo])} PE
+                            </p>
+                          </div>
+                          {foiAdicionado ? (
+                            <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Adicionado
+                            </span>
+                          ) : (
+                            <PlusIcon className="h-4 w-4 shrink-0 text-primary opacity-60 transition-opacity group-hover:opacity-100" />
+                          )}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          <Badge variant="outline" className={cn("rounded-none px-1.5 py-0 text-[10px]", ELEMENTO_BADGE[ritual.elemento])}>
+                            {ELEMENTO_LABELS[ritual.elemento]}
+                          </Badge>
+                          {ritual.execucao && <Badge variant="outline" className="rounded-none px-1.5 py-0 text-[10px]">{ritual.execucao}</Badge>}
+                          {ritual.alvo && <Badge variant="outline" className="rounded-none px-1.5 py-0 text-[10px]">{ritual.alvo}</Badge>}
+                          {ritual.dt && <Badge variant="outline" className="rounded-none px-1.5 py-0 text-[10px]">DT {ritual.dt}</Badge>}
+                        </div>
+                        {ritual.descricao && <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{parseDescricaoRitual(ritual.descricao)}</p>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-4">
             {form.rituais.map((r, i) => (
               <div key={i} className="border border-border p-3 space-y-3">
@@ -784,6 +952,32 @@ function Summary({ label, value, danger }: { label: string; value: React.ReactNo
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{children}</p>;
+}
+
+function FilterButton({
+  active,
+  className,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  className?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "border px-2.5 py-1 text-[11px] font-medium transition-colors",
+        active ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
 }
 
 function AddButton({ onClick }: { onClick: () => void }) {

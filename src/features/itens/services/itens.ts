@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { Item, ItemPayload } from "@/shared/types/item";
 
 const supabase = createClient();
@@ -8,6 +9,7 @@ export async function getItens(): Promise<Item[]> {
     .from("items")
     .select("*")
     .order("categoria")
+    .order("categoria_valor")
     .order("nome");
   if (error) throw error;
   return data ?? [];
@@ -20,9 +22,10 @@ export async function getItem(id: string): Promise<Item> {
 }
 
 export async function createItem(payload: ItemPayload): Promise<Item> {
+  const userId = await requireCurrentUserId(supabase);
   const { data, error } = await supabase
     .from("items")
-    .insert(payload)
+    .insert({ ...payload, user_id: userId })
     .select()
     .single();
   if (error) throw error;

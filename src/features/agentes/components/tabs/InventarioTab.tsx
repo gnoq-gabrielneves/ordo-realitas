@@ -28,7 +28,7 @@ const SUBCATEGORIA_LABELS: Record<string, string> = {
 };
 
 const CREDITO_LABELS: Record<number, string> = {
-  1: "Crédito 0", 2: "Crédito I", 3: "Crédito II", 4: "Crédito III",
+  0: "Cat. 0", 1: "Cat. I", 2: "Cat. II", 3: "Cat. III", 4: "Cat. IV", 5: "Cat. V", 6: "Cat. VI",
 };
 
 const CATEGORIA_COLORS: Record<string, string> = {
@@ -207,7 +207,7 @@ export function InventarioTab({ data, onChange }: InventarioTabProps) {
                   <div className="min-w-0">
                     <p className="font-semibold leading-tight">{item.nome}</p>
                     <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      {item.espacos} espaço{item.espacos !== 1 ? "s" : ""} · {CREDITO_LABELS[item.credito_tier]}
+                      {item.espacos_texto ?? item.espacos} espaço{item.espacos !== 1 || item.espacos_texto ? "s" : ""} · {CREDITO_LABELS[item.categoria_valor ?? item.credito_tier ?? 0]}
                     </p>
                   </div>
                   <span className="shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100">

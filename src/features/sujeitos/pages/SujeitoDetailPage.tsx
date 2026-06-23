@@ -270,6 +270,12 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
               </div>
             </Section>
           )}
+
+          {isCriatura && sujeito.enigma_medo && (
+            <Section title="Enigma do Medo" icon={<Skull className="h-4 w-4" />} description="Segredo ou condição especial ligada à criatura.">
+              <TextBlock label="Enigma" value={sujeito.enigma_medo} />
+            </Section>
+          )}
         </div>
 
         <aside className="space-y-4">

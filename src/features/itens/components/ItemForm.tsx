@@ -5,7 +5,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { Item, ItemCategoria, ItemPayload } from "@/shared/types/item";
+import { Item, ItemCategoria, ItemCategoriaValor, ItemPayload } from "@/shared/types/item";
 import { useState } from "react";
 
 interface ItemFormProps {
@@ -15,26 +15,49 @@ interface ItemFormProps {
 }
 
 const CREDITO_LABELS: Record<number, string> = {
-  1: "I — Básico",
-  2: "II — Padrão",
-  3: "III — Restrito",
-  4: "IV — Militar",
+  0: "0 — Livre",
+  1: "I",
+  2: "II",
+  3: "III",
+  4: "IV",
+  5: "V",
+  6: "VI",
 };
 
 const empty: ItemPayload = {
   nome: "",
   categoria: "geral",
   subcategoria: null,
+  categoria_valor: 0,
   espacos: 1,
+  espacos_texto: null,
+  proficiencia: null,
+  tipo_arma: null,
+  empunhadura: null,
   dano: null,
   teste: null,
   critico: null,
   alcance: null,
+  tipo_dano: null,
   especial: null,
   protecao_valor: null,
+  defesa_bonus: null,
+  rd: null,
   penalidade: null,
   descricao: null,
-  credito_tier: 1,
+  image_url: null,
+  bonus_pericia: null,
+  acao_uso: null,
+  custo_pe: null,
+  dt: null,
+  duracao: null,
+  resistencia: null,
+  requisitos: null,
+  tags: [],
+  fonte: "manual",
+  oficial: false,
+  data: {},
+  credito_tier: 0,
 };
 
 export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
@@ -42,16 +65,36 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
     nome: initial.nome,
     categoria: initial.categoria,
     subcategoria: initial.subcategoria,
+    categoria_valor: initial.categoria_valor ?? initial.credito_tier ?? 0,
     espacos: initial.espacos,
+    espacos_texto: initial.espacos_texto,
+    proficiencia: initial.proficiencia,
+    tipo_arma: initial.tipo_arma,
+    empunhadura: initial.empunhadura,
     dano: initial.dano,
     teste: initial.teste,
     critico: initial.critico,
     alcance: initial.alcance,
+    tipo_dano: initial.tipo_dano,
     especial: initial.especial,
     protecao_valor: initial.protecao_valor,
+    defesa_bonus: initial.defesa_bonus,
+    rd: initial.rd,
     penalidade: initial.penalidade,
     descricao: initial.descricao,
-    credito_tier: initial.credito_tier,
+    image_url: initial.image_url,
+    bonus_pericia: initial.bonus_pericia,
+    acao_uso: initial.acao_uso,
+    custo_pe: initial.custo_pe,
+    dt: initial.dt,
+    duracao: initial.duracao,
+    resistencia: initial.resistencia,
+    requisitos: initial.requisitos,
+    tags: initial.tags ?? [],
+    fonte: initial.fonte ?? "manual",
+    oficial: initial.oficial ?? false,
+    data: initial.data ?? {},
+    credito_tier: initial.categoria_valor ?? initial.credito_tier ?? 0,
   } : empty);
 
   const set = <K extends keyof ItemPayload>(k: K, v: ItemPayload[K]) =>
@@ -63,7 +106,8 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
       categoria: cat,
       subcategoria: null,
       dano: null, teste: null, critico: null, alcance: null, especial: null,
-      protecao_valor: null, penalidade: null,
+      tipo_dano: null, proficiencia: null, tipo_arma: null, empunhadura: null,
+      protecao_valor: null, defesa_bonus: null, rd: null, penalidade: null,
     }));
   };
 
@@ -96,6 +140,8 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
               <SelectItem value="arma">Arma</SelectItem>
               <SelectItem value="protecao">Proteção</SelectItem>
               <SelectItem value="geral">Geral / Equipamento</SelectItem>
+              <SelectItem value="municao">Munição</SelectItem>
+              <SelectItem value="modificacao">Modificação</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -132,6 +178,37 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
               <SelectContent position="popper">
                 <SelectItem value="leve">Leve</SelectItem>
                 <SelectItem value="pesada">Pesada</SelectItem>
+                <SelectItem value="escudo">Escudo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {form.categoria === "geral" && (
+          <div className="space-y-1.5">
+            <Label>Tipo de equipamento</Label>
+            <Select value={form.subcategoria ?? ""} onValueChange={(v) => set("subcategoria", v || null)}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="acessorio">Acessório</SelectItem>
+                <SelectItem value="explosivo">Explosivo</SelectItem>
+                <SelectItem value="operacional">Operacional</SelectItem>
+                <SelectItem value="paranormal">Paranormal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {form.categoria === "modificacao" && (
+          <div className="space-y-1.5">
+            <Label>Aplica em</Label>
+            <Select value={form.subcategoria ?? ""} onValueChange={(v) => set("subcategoria", v || null)}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="arma">Arma</SelectItem>
+                <SelectItem value="protecao">Proteção</SelectItem>
+                <SelectItem value="acessorio">Acessório</SelectItem>
+                <SelectItem value="municao">Munição</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -144,17 +221,14 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estatísticas da Arma</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="space-y-1.5">
-              <Label>Teste</Label>
+              <Label>Teste de ataque</Label>
               <Select value={form.teste ?? ""} onValueChange={(v) => set("teste", v || null)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Atrib." />
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="AGI">AGI</SelectItem>
-                  <SelectItem value="FOR">FOR</SelectItem>
-                  <SelectItem value="INT">INT</SelectItem>
-                  <SelectItem value="PRE">PRE</SelectItem>
-                  <SelectItem value="VIG">VIG</SelectItem>
+                  <SelectItem value="Luta">Luta</SelectItem>
+                  <SelectItem value="Pontaria">Pontaria</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -182,6 +256,38 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
                 placeholder="Ex: Curto"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Tipo de dano</Label>
+              <Input
+                value={form.tipo_dano ?? ""}
+                onChange={(e) => set("tipo_dano", e.target.value || null)}
+                placeholder="C, I, P, B, Fogo..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo de arma</Label>
+              <Input
+                value={form.tipo_arma ?? ""}
+                onChange={(e) => set("tipo_arma", e.target.value || null)}
+                placeholder="Corpo a corpo, fogo..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Empunhadura</Label>
+              <Input
+                value={form.empunhadura ?? ""}
+                onChange={(e) => set("empunhadura", e.target.value || null)}
+                placeholder="Leve, uma mão, duas mãos"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Proficiência</Label>
+              <Input
+                value={form.proficiencia ?? ""}
+                onChange={(e) => set("proficiencia", e.target.value || null)}
+                placeholder="Simples, tática, pesada"
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>Especial</Label>
@@ -200,11 +306,11 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estatísticas da Proteção</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>Proteção</Label>
+              <Label>Defesa</Label>
               <Input
                 value={form.protecao_valor ?? ""}
                 onChange={(e) => set("protecao_valor", e.target.value || null)}
-                placeholder="Ex: 3"
+                placeholder="Ex: +5"
               />
             </div>
             <div className="space-y-1.5">
@@ -214,6 +320,55 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
                 onChange={(e) => set("penalidade", e.target.value || null)}
                 placeholder="Ex: -2 Furtividade"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label>RD / Resistência</Label>
+              <Input
+                value={form.rd ?? ""}
+                onChange={(e) => set("rd", e.target.value || null)}
+                placeholder="Ex: Balístico 2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Bônus numérico de defesa</Label>
+              <Input
+                type="number"
+                value={form.defesa_bonus ?? ""}
+                onChange={(e) => set("defesa_bonus", e.target.value === "" ? null : Number(e.target.value))}
+                placeholder="Ex: 5"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(form.categoria === "geral" || form.categoria === "municao" || form.categoria === "modificacao") && (
+        <div className="rounded-md border border-border p-4 space-y-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Regras de Uso</p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label>Bônus / Perícia</Label>
+              <Input value={form.bonus_pericia ?? ""} onChange={(e) => set("bonus_pericia", e.target.value || null)} placeholder="+5 Percepção" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Ação</Label>
+              <Input value={form.acao_uso ?? ""} onChange={(e) => set("acao_uso", e.target.value || null)} placeholder="Padrão, movimento..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Custo PE</Label>
+              <Input type="number" min={0} value={form.custo_pe ?? ""} onChange={(e) => set("custo_pe", e.target.value === "" ? null : Number(e.target.value))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>DT / Resistência</Label>
+              <Input value={form.dt ?? ""} onChange={(e) => set("dt", e.target.value || null)} placeholder="Fortitude DT Agi" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Duração</Label>
+              <Input value={form.duracao ?? ""} onChange={(e) => set("duracao", e.target.value || null)} placeholder="Cena, rodada..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Alcance / Área</Label>
+              <Input value={form.alcance ?? ""} onChange={(e) => set("alcance", e.target.value || null)} placeholder="Curto, médio, 6m..." />
             </div>
           </div>
         </div>
@@ -230,8 +385,17 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
         />
       </div>
 
+      <div className="space-y-1.5">
+        <Label>Requisitos / Observações</Label>
+        <Input
+          value={form.requisitos ?? ""}
+          onChange={(e) => set("requisitos", e.target.value || null)}
+          placeholder="Ex: só para proteções pesadas; requer proficiência..."
+        />
+      </div>
+
       {/* Inventário / Crédito */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label>Espaços no inventário</Label>
           <Input
@@ -242,16 +406,27 @@ export function ItemForm({ initial, onSubmit, loading }: ItemFormProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Limite de Crédito</Label>
+          <Label>Espaços especiais</Label>
+          <Input
+            value={form.espacos_texto ?? ""}
+            onChange={(e) => set("espacos_texto", e.target.value || null)}
+            placeholder="Ex: *"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Categoria do item</Label>
           <Select
-            value={String(form.credito_tier)}
-            onValueChange={(v) => set("credito_tier", Number(v) as 1 | 2 | 3 | 4)}
+            value={String(form.categoria_valor)}
+            onValueChange={(v) => {
+              const value = Number(v) as ItemCategoriaValor;
+              setForm((current) => ({ ...current, categoria_valor: value, credito_tier: value }));
+            }}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper">
-              {[1, 2, 3, 4].map((t) => (
+              {[0, 1, 2, 3, 4, 5, 6].map((t) => (
                 <SelectItem key={t} value={String(t)}>{CREDITO_LABELS[t]}</SelectItem>
               ))}
             </SelectContent>

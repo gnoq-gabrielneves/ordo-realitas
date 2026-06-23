@@ -7,7 +7,7 @@ import { NovaFichaDialog } from "@/features/agentes/components/NovaFichaDialog";
 import { useAgentes, useCreateAgente, useDeleteAgente } from "@/features/agentes/hooks/useAgentes";
 import { getEstigmas } from "@/shared/constants/hexatombe";
 import { AgentSheet, AgentSheetPayload } from "@/shared/types/agent";
-import { cn } from "@/shared/lib/utils";
+import { cn, formatCount } from "@/shared/lib/utils";
 import {
   BookOpenCheck,
   Heart,
@@ -113,7 +113,7 @@ function AgentCard({ agent }: { agent: AgentSheet }) {
                 .{" "}
               </span>
             )}
-            {agent.habilidades.length > 0 && <span>{agent.habilidades.length} habilidade{agent.habilidades.length !== 1 ? "s" : ""} cadastrada{agent.habilidades.length !== 1 ? "s" : ""}.</span>}
+            {agent.habilidades.length > 0 && <span>{formatCount(agent.habilidades.length, "habilidade cadastrada", "habilidades cadastradas")}.</span>}
           </div>
         )}
       </Link>
@@ -308,7 +308,7 @@ export function AgentesPage() {
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              {filtered.length} ficha{filtered.length !== 1 ? "s" : ""} encontrada{filtered.length !== 1 ? "s" : ""}
+              {formatCount(filtered.length, "ficha encontrada", "fichas encontradas")}
             </p>
             <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {filtered.map((agent) => <AgentCard key={agent.id} agent={agent} />)}

@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/client";
+import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
 import { Ritual, RitualPayload } from "@/shared/types/ritual";
 
 const supabase = createClient();
@@ -21,9 +22,10 @@ export async function getRitual(id: string): Promise<Ritual> {
 }
 
 export async function createRitual(payload: RitualPayload): Promise<Ritual> {
+  const userId = await requireCurrentUserId(supabase);
   const { data, error } = await supabase
     .from("rituals")
-    .insert(payload)
+    .insert({ ...payload, user_id: userId })
     .select()
     .single();
   if (error) throw error;

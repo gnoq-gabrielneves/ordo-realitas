@@ -2,7 +2,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { ELEMENTO_BADGE } from "@/shared/constants/elements";
 import { Npc } from "@/shared/types/npc";
 import { RitualElemento } from "@/shared/types/ritual";
-import { cn } from "@/shared/lib/utils";
+import { cn, formatCount } from "@/shared/lib/utils";
 import { Eye, Heart, Shield, Skull, Sparkles, Swords, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -89,8 +89,8 @@ export function SujeitoCard({ sujeito }: SujeitoCardProps) {
 
       <div className="flex flex-wrap items-center gap-3 border-t border-border/60 px-4 py-3 text-[10px] text-muted-foreground">
         {sujeito.percepcao && <StatusPill icon={<Eye className="h-3 w-3" />} label={`Percepção ${sujeito.percepcao}`} />}
-        {sujeito.rituais.length > 0 && <StatusPill icon={<Sparkles className="h-3 w-3" />} label={`${sujeito.rituais.length} ritual${sujeito.rituais.length !== 1 ? "ais" : ""}`} />}
-        {sujeito.resistencias.length > 0 && <StatusPill icon={<Shield className="h-3 w-3" />} label={`${sujeito.resistencias.length} resistência${sujeito.resistencias.length !== 1 ? "s" : ""}`} />}
+        {sujeito.rituais.length > 0 && <StatusPill icon={<Sparkles className="h-3 w-3" />} label={formatCount(sujeito.rituais.length, "ritual", "rituais")} />}
+        {sujeito.resistencias.length > 0 && <StatusPill icon={<Shield className="h-3 w-3" />} label={formatCount(sujeito.resistencias.length, "resistência", "resistências")} />}
         {!sujeito.percepcao && sujeito.rituais.length === 0 && sujeito.resistencias.length === 0 && (
           <span>Registro narrativo</span>
         )}
