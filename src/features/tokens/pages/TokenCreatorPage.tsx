@@ -7,8 +7,8 @@ import { cn } from "@/shared/lib/utils";
 import { Download, ImageIcon, Move, RotateCcw, Upload, ZoomIn } from "lucide-react";
 import { ChangeEvent, PointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
-type ElementoToken = "sangue" | "morte" | "energia" | "conhecimento";
-type FundoToken = "none" | "deserto";
+type ElementoToken = "sangue" | "morte" | "energia" | "conhecimento" | "transmissao";
+type FundoToken = "none" | "deserto" | "backrooms" | "pizzaria" | "as05Capa" | "as05Um" | "as05Dois" | "as05Tres" | "as05Quatro";
 
 const TOKEN_SIZE = 900;
 
@@ -37,11 +37,24 @@ const ELEMENTOS: Record<ElementoToken, { label: string; frame: string; accent: s
     accent: "text-amber-400",
     chip: "border-amber-500/35 bg-amber-500/10 text-amber-300",
   },
+  transmissao: {
+    label: "Transmissão",
+    frame: "/token-frames/moldura-transmissao.png",
+    accent: "text-emerald-300",
+    chip: "border-emerald-400/35 bg-emerald-400/10 text-emerald-300",
+  },
 };
 
 const FUNDOS: Record<FundoToken, { label: string; src: string | null }> = {
   none: { label: "Transparente", src: null },
   deserto: { label: "Deserto", src: "/token-backgrounds/background-deserto.png" },
+  backrooms: { label: "BackRooms", src: "/token-backgrounds/background-backrooms.jpg" },
+  pizzaria: { label: "Pizzaria", src: "/token-backgrounds/background-pizzaria.jpg" },
+  as05Capa: { label: "AS05 Capa", src: "/token-backgrounds/background-as05-capa.png" },
+  as05Um: { label: "AS05 1", src: "/token-backgrounds/background-as05-1.png" },
+  as05Dois: { label: "AS05 2", src: "/token-backgrounds/background-as05-2.png" },
+  as05Tres: { label: "AS05 3", src: "/token-backgrounds/background-as05-3.png" },
+  as05Quatro: { label: "AS05 4", src: "/token-backgrounds/background-as05-4.png" },
 };
 
 export function TokenCreatorPage() {
