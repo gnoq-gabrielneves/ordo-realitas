@@ -1,32 +1,32 @@
-import { createClient } from "@/shared/lib/supabase/client";
 import { requireCurrentUserId } from "@/shared/lib/supabase/auth";
-import { Npc, NpcPayload } from "@/shared/types/npc";
+import { createClient } from "@/shared/lib/supabase/client";
+import { Circle, CirclePayload } from "@/shared/types/circle";
 
 const supabase = createClient();
 
-export async function getSujeitos(): Promise<Npc[]> {
+export async function getCirculos(): Promise<Circle[]> {
   const { data, error } = await supabase
-    .from("npcs")
-    .select("*, circle:circles(*)")
-    .order("name");
+    .from("circles")
+    .select("*")
+    .order("nome");
   if (error) throw error;
   return data ?? [];
 }
 
-export async function getSujeito(id: string): Promise<Npc> {
+export async function getCirculo(id: string): Promise<Circle> {
   const { data, error } = await supabase
-    .from("npcs")
-    .select("*, circle:circles(*)")
+    .from("circles")
+    .select("*")
     .eq("id", id)
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function createSujeito(payload: NpcPayload): Promise<Npc> {
+export async function createCirculo(payload: CirclePayload): Promise<Circle> {
   const userId = await requireCurrentUserId(supabase);
   const { data, error } = await supabase
-    .from("npcs")
+    .from("circles")
     .insert({ ...payload, user_id: userId })
     .select()
     .single();
@@ -34,9 +34,9 @@ export async function createSujeito(payload: NpcPayload): Promise<Npc> {
   return data;
 }
 
-export async function updateSujeito(id: string, payload: Partial<NpcPayload>): Promise<Npc> {
+export async function updateCirculo(id: string, payload: Partial<CirclePayload>): Promise<Circle> {
   const { data, error } = await supabase
-    .from("npcs")
+    .from("circles")
     .update(payload)
     .eq("id", id)
     .select()
@@ -45,7 +45,7 @@ export async function updateSujeito(id: string, payload: Partial<NpcPayload>): P
   return data;
 }
 
-export async function deleteSujeito(id: string): Promise<void> {
-  const { error } = await supabase.from("npcs").delete().eq("id", id);
+export async function deleteCirculo(id: string): Promise<void> {
+  const { error } = await supabase.from("circles").delete().eq("id", id);
   if (error) throw error;
 }

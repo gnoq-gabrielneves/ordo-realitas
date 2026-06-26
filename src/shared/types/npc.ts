@@ -1,3 +1,5 @@
+import { Circle } from "@/shared/types/circle";
+
 export type NpcTipo = "pessoa" | "criatura";
 export type NpcTamanho = "pequeno" | "medio" | "grande" | "enorme" | "colossal";
 export type NpcOrigem = "sangue" | "morte" | "medo" | "conhecimento" | "energia";
@@ -51,6 +53,8 @@ export interface NpcRitual {
 export interface Npc {
   id: string;
   user_id: string;
+  circle_id: string | null;
+  circle?: Circle | null;
   name: string;
   image_url: string | null;
   tipo: NpcTipo | null;

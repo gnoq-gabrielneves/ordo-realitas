@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   MapPin,
   Monitor,
+  Network,
   Package,
   Shield,
   Sparkles,
@@ -43,6 +44,7 @@ export const NAV_GROUPS = [
     items: [
       { label: "Agentes", href: "/agentes", icon: Shield },
       { label: "Sujeitos", href: "/sujeitos", icon: Users },
+      { label: "Círculos", href: "/circulos", icon: Network },
       { label: "Lugares", href: "/lugares", icon: MapPin },
       { label: "Itens", href: "/itens", icon: Package },
       { label: "Rituais", href: "/rituais", icon: Sparkles },

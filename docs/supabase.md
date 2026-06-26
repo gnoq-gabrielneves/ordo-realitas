@@ -189,6 +189,7 @@ Buckets usados pelo app:
 - `campanhas`
 - `lugares`
 - `sujeitos`
+- `circulos`
 - `apresentacao`
 
 Os uploads sao salvos em caminhos por usuario:

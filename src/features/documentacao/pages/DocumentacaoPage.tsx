@@ -77,7 +77,7 @@ const SECTIONS: DocSection[] = [
     icon: Database,
     items: [
       "Tabelas principais: profiles, campaigns, missions, scenes, agent_sheets, npcs, places, items, rituals e presentation_state.",
-      "Buckets usados: agentes, campanhas, lugares, sujeitos e apresentacao.",
+      "Buckets usados: agentes, campanhas, lugares, sujeitos, circulos e apresentacao.",
       "Próximo passo: migrations versionadas e policies por campanha.",
     ],
   },

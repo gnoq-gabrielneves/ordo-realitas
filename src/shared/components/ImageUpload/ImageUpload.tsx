@@ -39,7 +39,7 @@ export function ImageUpload({ bucket, value, onChange, className = "h-32 w-32", 
 
     if (uploadError) {
       console.error("[ImageUpload] upload error:", uploadError);
-      setError("Erro ao enviar imagem.");
+      setError(uploadError.message ? `Erro ao enviar imagem: ${uploadError.message}` : "Erro ao enviar imagem.");
       setLoading(false);
       return;
     }

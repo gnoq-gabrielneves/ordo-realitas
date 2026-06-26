@@ -10,6 +10,7 @@ import { Switch } from "@/shared/components/ui/switch";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Npc, NpcAcao, NpcAcaoTipo, NpcHabilidade, NpcPayload, NpcPericia, NpcResistencia, NpcRitual } from "@/shared/types/npc";
 import { PERICIAS } from "@/shared/constants/pericias";
+import { useCirculos } from "@/features/circulos/hooks/useCirculos";
 import { useItens } from "@/features/itens/hooks/useItens";
 import { useRituais } from "@/features/rituais/hooks/useRituais";
 import { Item } from "@/shared/types/item";
@@ -70,6 +71,7 @@ function ritualFromBiblioteca(r: Ritual): NpcRitual {
 }
 
 const EMPTY_PAYLOAD: NpcPayload = {
+  circle_id: null,
   name: "",
   image_url: null,
   tipo: null,
@@ -112,6 +114,7 @@ interface SujeitoFormProps {
 }
 
 export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) {
+  const { data: circulos = [] } = useCirculos();
   const { data: itens = [] } = useItens();
   const armas = itens.filter((it) => it.categoria === "arma");
   const { data: rituaisBiblioteca = [] } = useRituais();
@@ -123,6 +126,7 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
   const ritualFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [form, setForm] = useState<NpcPayload>(
     initial ? {
+      circle_id: initial.circle_id,
       name: initial.name,
       image_url: initial.image_url,
       tipo: initial.tipo,
@@ -346,6 +350,17 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
                     <SelectItem value="medo">Medo</SelectItem>
                     <SelectItem value="conhecimento">Conhecimento</SelectItem>
                     <SelectItem value="energia">Energia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Círculo">
+                <Select value={form.circle_id ?? "none"} onValueChange={(v) => set("circle_id", v === "none" ? null : v)}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Sem círculo" /></SelectTrigger>
+                  <SelectContent position="popper">
+                    <SelectItem value="none">Sem círculo</SelectItem>
+                    {circulos.map((circulo) => (
+                      <SelectItem key={circulo.id} value={circulo.id}>{circulo.nome}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </Field>
@@ -856,6 +871,7 @@ export function SujeitoForm({ initial, onSubmit, isLoading }: SujeitoFormProps) 
             <div className="space-y-3">
               <Summary label="Nome" value={form.name || "Sem nome"} />
               <Summary label="Tipo" value={form.tipo ?? "Não definido"} />
+              <Summary label="Círculo" value={circulos.find((circulo) => circulo.id === form.circle_id)?.nome ?? "Nenhum"} />
               <Summary label="VD" value={form.vd ?? "—"} danger={form.vd != null} />
               <Summary label="Defesa" value={form.defesa ?? "—"} />
               <Summary label="PV" value={form.pv ?? "—"} />

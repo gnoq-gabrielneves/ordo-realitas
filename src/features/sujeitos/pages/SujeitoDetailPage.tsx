@@ -12,6 +12,7 @@ import {
   Eye,
   Gauge,
   Heart,
+  Network,
   NotebookText,
   Pencil,
   Shield,
@@ -121,6 +122,7 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
             <div className="flex flex-wrap gap-2">
               <Tag danger={isCriatura}>{isCriatura ? "Criatura" : "Pessoa"}</Tag>
               {sujeito.origem && <Tag>{origemLabel[sujeito.origem]}</Tag>}
+              {sujeito.circle && <Tag>{sujeito.circle.nome}</Tag>}
               {sujeito.tamanho && <Tag>{sujeito.tamanho}</Tag>}
               {sujeito.percepcao_as_cegas && <Tag>Percepção às cegas</Tag>}
             </div>
@@ -131,6 +133,12 @@ export function SujeitoDetailPage({ id }: SujeitoDetailPageProps) {
             <div className="mt-6 grid gap-3 md:grid-cols-2">
               <Info label="Tipo" value={sujeito.tipo ?? "Pessoa"} />
               <Info label="Origem" value={sujeito.origem ? origemLabel[sujeito.origem] : "Mundano"} />
+              <Info label="Círculo" value={sujeito.circle ? (
+                <Link href={`/circulos/${sujeito.circle.id}`} className="inline-flex items-center gap-1.5 text-primary hover:underline">
+                  <Network className="h-3.5 w-3.5" />
+                  {sujeito.circle.nome}
+                </Link>
+              ) : "Nenhum"} />
               <Info label="Tamanho" value={sujeito.tamanho ?? "Não definido"} />
               <Info label="VD" value={sujeito.vd != null ? sujeito.vd : "Não definido"} danger={sujeito.vd != null} />
             </div>
